@@ -270,7 +270,25 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
     (Guardián del Null 140 HP kind wild + sprites Junior/Cleric/Keeper,
     Mili la Clériga que cura, nivel 5, quest 6 retargeteada a keeper,
     smokes CryptSmoke extendido + HealerSmoke; smokes: 14).
+14. ~~NG+ post-game + versionado del save + pulido final.~~ Hecho (NG+ conserva
+    nivel/XP/jobs con enemigos +30%, save v1 con ngplus, botón NG+ en EndPanel,
+    smoke NgPlusSmoke; smokes: 15).
+
+## NG+ (post-game)
+- Se desbloquea al vencer al Rey Demonio: el EndPanel ofrece ↻ Nueva partida
+  (ResetRun total) y ↻ NG+ (nivel y jobs) vía `Battle.OnNgPlusPressed`.
+- NG+ conserva Level, XP, UnlockedJobs y CurrentJob con cura full (stats base
+  recalculadas por nivel); resetea bosses, quests (Done/Active/Progress),
+  cristales, SelectedEnemy/EncounterKind, spawn, InDungeon/AreaId, CalmSteps y
+  TotalWildWins. `GameState.NgPlus` marca el modo.
+- Enemigos +30% HP/ATK vía `GameState.ScaledEnemy(id)` (mismo XP/Tint/Scale;
+  slime 36→46 HP). `Battle` lo usa con fallback a slime.
+- Save versionado: `SaveGame.Version = 1` + campos `version`/`ngplus`
+  (faltantes → 1/false sin fallar).
+- Smoke `tests/NgPlusSmoke.cs` (seed 15, timeout 1800): backend + 100 XP (Lv3)
+  → NG+ conserva → slime 46 HP → victoria → Main → ResetRun total → slime
+  36 HP → huida → PASS.
 
 ## Próximo paso
 
-post-game: boss rush / NG+ y pulido final.
+release: export presets Linux/Windows + página de itch.io.

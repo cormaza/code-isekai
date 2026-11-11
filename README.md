@@ -224,8 +224,17 @@ godot-mono --headless --path . --script res://tests/HealerSmoke.cs
   y bob idle (enemigo ±3px, party ±1.5px con fases distintas, solo Y para no pelear con el lunge).
   Smoke `tests/AnimSmoke.cs` (seed 6): caminar anima Player + Ally0.
 - **Rey Demonio:** jefe final = Rey Demonio (300 HP, atk 18-25, 250 XP).
-  Vencerlo muestra "¡REY DEMONIO DERROTADO!" (nivel y XP) con
-  ↻ Nueva partida (ResetRun: todo a inicial). Huir del Rey Demonio se permite.
+  Vencerlo muestra "¡REY DEMONIO DERROTADO!" (nivel y XP + flavor NG+) con
+  ↻ Nueva partida (ResetRun: todo a inicial) y ↻ NG+ (nivel y jobs).
+  Huir del Rey Demonio se permite.
+- **NG+ (post-game):** se desbloquea al vencer al Rey Demonio (EndPanel).
+  `GameState.ResetRun(newGamePlus: true)` conserva Level, XP, UnlockedJobs y
+  CurrentJob con cura full; resetea bosses, quests, cristales, spawn/área y
+  contadores (stats base recalculadas por nivel conservado). `ScaledEnemy(id)`
+  escala +30% HP/ATK en NG+ (mismo XP/Tint/Scale; slime 36→46 HP).
+  El save lleva versión (`version=1` + `ngplus`; faltantes → 1/false sin fallar).
+  Smoke `tests/NgPlusSmoke.cs` (seed 15): NG+ conserva y escala → victoria →
+  Main → ResetRun total → slime 36 HP → huida → PASS.
 - **Nivel 5:** umbrales 20 XP → 2, 100 XP → 3, 250 XP → 4, 500 XP → 5; HP/atk base 50/12 +10/+2 por nivel.
 - **Reto = daño/castigo:** el comando 🧩 Reto abre un puzzle de código al azar
   (offbyone, loop, http, strictnull, sql), 1 uso por batalla. Se responde por
@@ -236,8 +245,8 @@ godot-mono --headless --path . --script res://tests/HealerSmoke.cs
   ▶ Continuar solo si hay save (viaja al mapa del área guardada) y
   ✦ Nueva partida (borra el save + ResetRun). Foco inicial en el botón visible.
 - **Autoguardado:** al entrar a cada mapa, `World` guarda área + posición del
-  player (nivel, XP, HP, jobs, cristales, flags, TotalWildWins). Incluye todo
-  lo necesario para continuar donde estabas.
+  player (nivel, XP, HP, jobs, cristales, flags, TotalWildWins + versión y NG+).
+  Incluye todo lo necesario para continuar donde estabas.
 - **Torre del Stack (área 2):** portal en la mazmorra (1008, 624) →
   `scenes/world/Tower.tscn` (spawn 656, 624); salida (656, 560) → mazmorra
   (spawn 1008, 560). Paleta azulada, 11 pilares, pool propio:
@@ -253,6 +262,6 @@ godot-mono --headless --path . --script res://tests/HealerSmoke.cs
   bajarlo completa la quest 6 (target "keeper") y cierra la cadena (NextOffer()=="").
 - **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> cadena completa de 6 quests jugable + boss de la cripta. Próximo: post-game: boss rush / NG+ y pulido final.
+> NG+ post-game + save versionado + pulido final. Próximo paso = "release: export presets Linux/Windows + página de itch.io".
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.

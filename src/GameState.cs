@@ -115,6 +115,7 @@ public static class GameState
 	public static int Atk = 12;
 	public static int Level = 1;
 	public static int Xp = 0;
+	public static bool NgPlus = false;
 	public static bool SlimeDefeated = false;
 	public static bool BossDefeated = false;
 	public static bool DemonKingDefeated = false;
@@ -254,9 +255,48 @@ public static class GameState
 
 	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3), (250, 4), (500, 5) };
 
-	/// <summary>Restaura TODA la run a su estado inicial (nueva partida).</summary>
-	public static void ResetRun()
+	/// <summary>Enemigo con escala NG+ (+30% HP/ATK, mismo XP/Tint/Scale). Fallback a slime si el id no existe.</summary>
+	public static EnemyDef ScaledEnemy(string id)
 	{
+		if (!Enemies.TryGetValue(id, out EnemyDef def))
+		{
+			def = Enemies["slime"];
+		}
+		if (!NgPlus)
+		{
+			return def;
+		}
+		def.MaxHp = (int)(def.MaxHp * 1.3);
+		def.AtkMin = (int)(def.AtkMin * 1.3);
+		def.AtkMax = (int)(def.AtkMax * 1.3);
+		return def;
+	}
+
+	/// <summary>Restaura la run: sin args = nueva partida total; con true = NG+ (conserva Level/Xp/jobs, cura full).</summary>
+	public static void ResetRun(bool newGamePlus = false)
+	{
+		if (newGamePlus)
+		{
+			NgPlus = true;
+			SlimeDefeated = false;
+			BossDefeated = false;
+			DemonKingDefeated = false;
+			CollectedCrystals = new();
+			SelectedEnemy = "slime";
+			EncounterKind = "wild";
+			SpawnPoint = null;
+			InDungeon = false;
+			AreaId = 0;
+		CalmSteps = 60;
+		TotalWildWins = 0;
+			QuestLog.Reset();
+			PlayerMaxHp = JobMaxHp(CurrentJob);
+			Atk = JobAtk(CurrentJob);
+			AllyHp = new[] { AllyMaxHp(0), AllyMaxHp(1), AllyMaxHp(2) };
+			HealParty();
+			return;
+		}
+		NgPlus = false;
 		Level = 1;
 		Xp = 0;
 		SlimeDefeated = false;

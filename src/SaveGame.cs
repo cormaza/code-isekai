@@ -11,6 +11,7 @@ using Dictionary = Godot.Collections.Dictionary;
 public static class SaveGame
 {
 	public const string Path = "user://code_isekai_save.json";
+	public const int Version = 1;
 
 	public static bool Has() => Godot.FileAccess.FileExists(Path);
 
@@ -52,6 +53,8 @@ public static class SaveGame
 			["pos_x"] = pos.X,
 			["pos_y"] = pos.Y,
 			["total_wild"] = GameState.TotalWildWins,
+			["version"] = Version,
+			["ngplus"] = GameState.NgPlus,
 			["active_id"] = QuestLog.ActiveId,
 			["progress"] = QuestLog.Progress,
 			["done"] = doneQuests,
@@ -150,6 +153,7 @@ public static class SaveGame
 			GameState.BossDefeated = boss;
 			GameState.DemonKingDefeated = demon;
 			GameState.TotalWildWins = totalWild;
+			GameState.NgPlus = d.ContainsKey("ngplus") ? StrBool(d["ngplus"]) : false;
 			GameState.AreaId = area;
 			string questActive = d.ContainsKey("active_id") ? d["active_id"].ToString() : "";
 			if (!QuestLog.Quests.ContainsKey(questActive))

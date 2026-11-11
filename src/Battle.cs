@@ -93,10 +93,7 @@ public partial class Battle : Control
 
 	public override void _Ready()
 	{
-		if (!GameState.Enemies.TryGetValue(GameState.SelectedEnemy, out _def))
-		{
-			_def = GameState.Enemies["slime"];
-		}
+		_def = GameState.ScaledEnemy(GameState.SelectedEnemy);
 		EnemyId = GameState.SelectedEnemy;
 		_enemyHp = _def.MaxHp;
 
@@ -280,6 +277,12 @@ public partial class Battle : Control
 	public void OnPlayAgainPressed()
 	{
 		GameState.ResetRun();
+		GetTree().ChangeSceneToFile(MainScene);
+	}
+
+	public void OnNgPlusPressed()
+	{
+		GameState.ResetRun(newGamePlus: true);
 		GetTree().ChangeSceneToFile(MainScene);
 	}
 
@@ -647,7 +650,7 @@ public partial class Battle : Control
 		_jobPanel.Visible = false;
 		_puzzlePanel.Visible = false;
 		_retryButton.Visible = false;
-			_endStats.Text = $"Party nivel {GameState.Level} — XP {GameState.Xp}{extra}";
+			_endStats.Text = $"Party nivel {GameState.Level} — XP {GameState.Xp}{extra} (NG+: enemigos +30%)";
 			_endPanel.Visible = true;
 			Say("¡El monolito legacy se compila por fin…!");
 			return;

@@ -210,6 +210,11 @@ custom_minimum_size = Vector2(200, 52)
 theme_override_font_sizes/font_size = 22
 text = "↻ Nueva partida"
 
+[node name="NgPlusButton" type="Button" parent="EndPanel/VBox"]
+custom_minimum_size = Vector2(200, 52)
+theme_override_font_sizes/font_size = 22
+text = "↻ NG+ (nivel y jobs)"
+
 [node name="PlayerSprite" type="Sprite2D" parent="."]
 position = Vector2(150, 230)
 
@@ -277,6 +282,7 @@ show_percentage = false
 [connection signal="pressed" from="Menu/FleeButton" to="." method="OnFleePressed"]
 [connection signal="pressed" from="RetryButton" to="." method="OnRetryPressed"]
 [connection signal="pressed" from="EndPanel/VBox/PlayAgainButton" to="." method="OnPlayAgainPressed"]
+[connection signal="pressed" from="EndPanel/VBox/NgPlusButton" to="." method="OnNgPlusPressed"]
 [connection signal="pressed" from="PuzzlePanel/VBox/HBox/SubmitButton" to="." method="OnPuzzleSubmitPressed"]
 [connection signal="pressed" from="PuzzlePanel/VBox/HBox/CloseButton" to="." method="OnPuzzleClosePressed"]
 [connection signal="text_submitted" from="PuzzlePanel/VBox/AnswerLine" to="." method="OnPuzzleTextSubmitted"]
