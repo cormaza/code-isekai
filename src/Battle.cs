@@ -24,36 +24,6 @@ public partial class Battle : Control
 	public int AbilityUsesLeft => _abilityUses;
 	public readonly List<string> TurnLog = new();
 
-	struct EnemyDef
-	{
-		public string Name;
-		public int MaxHp;
-		public int AtkMin;
-		public int AtkMax;
-		public int Xp;
-		public Color Tint;
-		public float Scale;
-	}
-
-	static readonly Dictionary<string, EnemyDef> Enemies = new()
-	{
-		["slime"] = new EnemyDef
-		{
-			Name = "Slime-Bug", MaxHp = 30, AtkMin = 6, AtkMax = 10, Xp = 20,
-			Tint = new Color(0.35f, 0.85f, 0.40f), Scale = 1.0f,
-		},
-		["nullrat"] = new EnemyDef
-		{
-			Name = "NullRat", MaxHp = 22, AtkMin = 5, AtkMax = 8, Xp = 12,
-			Tint = new Color(0.60f, 0.58f, 0.72f), Scale = 0.8f,
-		},
-		["wraith"] = new EnemyDef
-		{
-			Name = "Legacy Wraith", MaxHp = 44, AtkMin = 8, AtkMax = 13, Xp = 30,
-			Tint = new Color(0.70f, 0.20f, 0.30f), Scale = 1.1f,
-		},
-	};
-
 	const string MainScene = "res://main.tscn";
 	const string DungeonScene = "res://scenes/world/Dungeon.tscn";
 	const string BattleScene = "res://scenes/battle/Battle.tscn";
@@ -72,7 +42,7 @@ public partial class Battle : Control
 	public string PuzzleId { get; private set; } = "";
 	public int PuzzleUsesLeft { get; private set; } = PuzzleUsesPerBattle;
 
-	EnemyDef _def;
+	GameState.EnemyDef _def;
 	int _enemyHp;
 	int _abilityUses = AbilityUsesPerBattle;
 	readonly int[] _allyUses = { AbilityUsesPerBattle, AbilityUsesPerBattle, AbilityUsesPerBattle };
@@ -100,12 +70,14 @@ public partial class Battle : Control
 	Label _puzzleQuestion = null!;
 	LineEdit _answerLine = null!;
 	VBoxContainer _jobPanel = null!;
+	PanelContainer _endPanel = null!;
+	Label _endStats = null!;
 
 	public override void _Ready()
 	{
-		if (!Enemies.TryGetValue(GameState.SelectedEnemy, out _def))
+		if (!GameState.Enemies.TryGetValue(GameState.SelectedEnemy, out _def))
 		{
-			_def = Enemies["slime"];
+			_def = GameState.Enemies["slime"];
 		}
 		EnemyId = GameState.SelectedEnemy;
 		_enemyHp = _def.MaxHp;
@@ -141,6 +113,8 @@ public partial class Battle : Control
 		_puzzleQuestion = GetNode<Label>("PuzzlePanel/VBox/Question");
 		_answerLine = GetNode<LineEdit>("PuzzlePanel/VBox/AnswerLine");
 		_jobPanel = GetNode<VBoxContainer>("JobPanel");
+		_endPanel = GetNode<PanelContainer>("EndPanel");
+		_endStats = GetNode<Label>("EndPanel/VBox/EndStats");
 
 		_enemyName.Text = _def.Name;
 		_enemySprite.Color = _def.Tint;
@@ -184,6 +158,12 @@ public partial class Battle : Control
 	{
 		GameState.ResetHp();
 		GetTree().ChangeSceneToFile(BattleScene);
+	}
+
+	public void OnPlayAgainPressed()
+	{
+		GameState.ResetRun();
+		GetTree().ChangeSceneToFile(MainScene);
 	}
 
 	public void OnRetoPressed()
@@ -529,8 +509,20 @@ public partial class Battle : Control
 	void DoVictory()
 	{
 		CurrentPhase = Phase.Over;
-		string extra = GameState.RegisterVictory(_def.Xp, GameState.FixedEncounter);
+		string extra = GameState.RegisterVictory(_def.Xp);
 		RefreshUi();
+		if (EnemyId == "demonking")
+		{
+			GameState.DemonKingDefeated = true;
+			SetMenuEnabled(false);
+		_jobPanel.Visible = false;
+		_puzzlePanel.Visible = false;
+		_retryButton.Visible = false;
+			_endStats.Text = $"Party nivel {GameState.Level} — XP {GameState.Xp}{extra}";
+			_endPanel.Visible = true;
+			Say("¡El monolito legacy se compila por fin…!");
+			return;
+		}
 		Say($"¡Victoria! Bug fixeado: +{_def.Xp} XP.{extra}");
 		ReturnToMap(1.5);
 	}

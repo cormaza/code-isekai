@@ -31,7 +31,7 @@ public partial class RandomEncounterSmoke : SceneTree
 			_setup = true;
 			GD.Seed(1234);
 			GameState.SelectedEnemy = "nullrat";
-			GameState.FixedEncounter = false;
+			GameState.EncounterKind = "wild";
 			var packed = GD.Load<PackedScene>("res://scenes/battle/Battle.tscn");
 			Node battle = packed.Instantiate();
 			Root.AddChild(battle);

@@ -50,6 +50,46 @@ public static class GameState
 		},
 	};
 
+	public struct EnemyDef
+	{
+		public string Name;
+		public int MaxHp;
+		public int AtkMin;
+		public int AtkMax;
+		public int Xp;
+		public Color Tint;
+		public float Scale;
+	}
+
+	public static readonly Dictionary<string, EnemyDef> Enemies = new()
+	{
+		["slime"] = new EnemyDef
+		{
+			Name = "Slime-Bug", MaxHp = 30, AtkMin = 6, AtkMax = 10, Xp = 20,
+			Tint = new Color(0.35f, 0.85f, 0.40f), Scale = 1.0f,
+		},
+		["nullrat"] = new EnemyDef
+		{
+			Name = "NullRat", MaxHp = 22, AtkMin = 5, AtkMax = 8, Xp = 12,
+			Tint = new Color(0.60f, 0.58f, 0.72f), Scale = 0.8f,
+		},
+		["wraith"] = new EnemyDef
+		{
+			Name = "Legacy Wraith", MaxHp = 44, AtkMin = 8, AtkMax = 13, Xp = 30,
+			Tint = new Color(0.70f, 0.20f, 0.30f), Scale = 1.1f,
+		},
+		["wraithlord"] = new EnemyDef
+		{
+			Name = "Wraithlord Legacy", MaxHp = 130, AtkMin = 12, AtkMax = 18, Xp = 100,
+			Tint = new Color(0.45f, 0.08f, 0.12f), Scale = 1.4f,
+		},
+		["demonking"] = new EnemyDef
+		{
+			Name = "Rey Demonio", MaxHp = 180, AtkMin = 15, AtkMax = 22, Xp = 250,
+			Tint = new Color(0.15f, 0.05f, 0.25f), Scale = 1.6f,
+		},
+	};
+
 	// Party: el player + 3 aliados con jobs fijos.
 	public static readonly string[] AllyNames = { "Tux", "Ada", "Grace" };
 	public static readonly string[] AllyJobs = { "frontend", "backend", "devops" };
@@ -61,14 +101,31 @@ public static class GameState
 	public static int Level = 1;
 	public static int Xp = 0;
 	public static bool SlimeDefeated = false;
+	public static bool BossDefeated = false;
+	public static bool DemonKingDefeated = false;
 
 	public static List<string> UnlockedJobs = new() { "freelancer" };
 	public static string CurrentJob = "freelancer";
 	public static HashSet<string> CollectedCrystals = new();
 
-	// Encuentro actual: id de enemigo y si es el slime fijo del mapa.
+	// Encuentro actual: id de enemigo y clase ("wild"|"slime"|"boss"|"demonking").
 	public static string SelectedEnemy = "slime";
-	public static bool FixedEncounter = false;
+	public static string EncounterKind = "wild";
+
+	/// <summary>Compat: los smokes viejos lo setean en false (= "wild").</summary>
+	[System.Obsolete("Usar EncounterKind.")]
+	public static bool FixedEncounter
+	{
+		get => EncounterKind != "wild";
+		set { if (!value)
+		{
+			EncounterKind = "wild";
+		}
+		else if (EncounterKind == "wild")
+		{
+			EncounterKind = "slime";
+		} }
+	}
 
 	// Viajes: spawn al cambiar de escena, flag de mazmorra, gracia y wins.
 	public static Vector2? SpawnPoint;
@@ -77,10 +134,10 @@ public static class GameState
 	public static int TotalWildWins = 0;
 
 	public static int JobMaxHp(string jobId) =>
-		(Level == 2 ? 60 : 50) + Jobs[jobId].HpMod;
+		(50 + (Level - 1) * 10) + Jobs[jobId].HpMod;
 
 	public static int JobAtk(string jobId) =>
-		(Level == 2 ? 14 : 12) + Jobs[jobId].AtkMod;
+		(12 + (Level - 1) * 2) + Jobs[jobId].AtkMod;
 
 	public static int AllyMaxHp(int i) => JobMaxHp(AllyJobs[i]);
 	public static int AllyAtk(int i) => JobAtk(AllyJobs[i]);
@@ -134,26 +191,67 @@ public static class GameState
 	}
 
 	/// <summary>Registra una victoria. Devuelve mensaje extra (level up) o vacío.</summary>
-	public static string RegisterVictory(int xp, bool fixedSlime)
+	public static string RegisterVictory(int xp) => RegisterVictory(xp, EncounterKind);
+
+	/// <summary>Variante con clase explícita (smokes): no toca EncounterKind.</summary>
+	public static string RegisterVictory(int xp, string kind)
 	{
-		if (fixedSlime)
+		if (kind == "slime")
 		{
 			SlimeDefeated = true;
 		}
-		else
+		else if (kind == "boss")
+		{
+			BossDefeated = true;
+		}
+		else if (kind == "wild")
 		{
 			TotalWildWins++;
 		}
+		// demonking: nada acá, lo marca Battle al mostrar el final.
 		Xp += xp;
 		CalmSteps = 120;
-		if (Level == 1 && Xp >= 20)
+		int newLevel = 1;
+		foreach (var (threshold, level) in LevelThresholds)
 		{
-			Level = 2;
+			if (Xp >= threshold)
+			{
+				newLevel = level;
+			}
+		}
+		if (newLevel > Level)
+		{
+			Level = newLevel;
 			RecomputeStats();
 			HealParty();
-			return " ¡La party subió a nivel 2! (HP restaurado)";
+			return $" ¡La party subió a nivel {Level}! (HP restaurado)";
 		}
 		return "";
+	}
+
+	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3) };
+
+	/// <summary>Restaura TODA la run a su estado inicial (nueva partida).</summary>
+	public static void ResetRun()
+	{
+		Level = 1;
+		Xp = 0;
+		SlimeDefeated = false;
+		BossDefeated = false;
+		DemonKingDefeated = false;
+		UnlockedJobs = new() { "freelancer" };
+		CurrentJob = "freelancer";
+		CollectedCrystals = new();
+		PlayerMaxHp = 50;
+		PlayerHp = 50;
+		Atk = 12;
+		AllyHp = new[] { 70, 40, 60 };
+		SelectedEnemy = "slime";
+		EncounterKind = "wild";
+		SpawnPoint = null;
+		InDungeon = false;
+		CalmSteps = 60;
+		TotalWildWins = 0;
 	}
 
 	static void RecomputeStats()

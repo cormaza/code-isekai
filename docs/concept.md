@@ -12,7 +12,15 @@ que se tragó a los héroes anteriores.
   (40% NullRat / 25% Slime salvaje / 35% Legacy Wraith).
 - 120px de gracia tras cada batalla (huida, victoria o portal); 60px al cargar el mapa.
 - Constantes en `World.cs` (RollEveryPx/EncounterChance + variantes Dungeon) y tabla de
-  enemigos en `Battle.cs` (dict Enemies).
+  enemigos en `GameState.cs` (dict Enemies: slime 30 HP, nullrat 22 HP,
+  wraith 44 HP, wraithlord 130 HP atk 12-18 XP 100, demonking 180 HP atk 15-22 XP 250).
+- Clase de encuentro `EncounterKind`: "wild" (aleatorio), "slime" (fijo),
+  "boss" (mazmorra), "demonking" (final). Victoria: slime→SlimeDefeated,
+  boss→BossDefeated, wild→TotalWildWins, demonking→flag en Battle + EndPanel.
+- Niveles: 20 XP → 2, 100 XP → 3; HP/atk base = 50/12 +10/+2 por nivel (+ mod del job).
+- Boss: Wraithlord al fondo de la mazmorra (656, 176); su derrota abre el DemonPortal
+  del overworld (752, 96), sellado hasta entonces (toast). El Rey Demonio no deja
+  volver al mapa: muestra el final con nivel/XP y ↻ Nueva partida (ResetRun).
 
 ## Party de 4
 - El player + 3 aliados con jobs fijos: Tux (Frontend Knight), Ada (Backend Mage),
@@ -69,7 +77,9 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
   Backend Mage (Fireball, cañón de cristal), DevOps Alchemist (Hotfix/cura).
   Cristales en el mapa desbloquean + equipan + curan; J cicla jobs en el mapa
   y el menú Job cambia en batalla (cuesta el turno). Habilidad: 2 usos.
-- Victoria: +XP y vuelta al mapa; level up a nivel 2 con 20 XP.
+- Victoria: +XP y vuelta al mapa; level up a nivel 2 con 20 XP, a nivel 3 con 100 XP.
+- Cierre: boss Wraithlord en la mazmorra, portal sellado, Rey Demonio final
+  con pantalla de victoria y nueva partida (ResetRun).
 - Smokes: mapa, encuentro fijo, aleatorios, jobs y party/mazmorra.
 - Party de 4 (aliados con comandos e IA simple) + dungeon. Hecho.
 
@@ -81,4 +91,6 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
 5. ~~Party de 4 (aliados con comandos e IA simple) + dungeon.~~ Hecho.
 6. ~~Primer reto real: puzzle de código dentro de la batalla.~~ Hecho
    (comando Reto: 5 puzzles, 1 uso, Enter para responder).
-7. Boss de la mazmorra y camino al Rey Demonio.
+7. ~~Boss de la mazmorra y camino al Rey Demonio.~~ Hecho (Wraithlord 130 HP,
+   portal sellado, Rey Demonio 180 HP con final + nueva partida, nivel 3).
+8. Guardado en disco + contenido extra (segunda área, más puzzles).

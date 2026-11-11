@@ -33,7 +33,7 @@ public partial class JobsSmoke : SceneTree
 			GD.Seed(99);
 			GameState.UnlockJob("backend");
 			GameState.SelectedEnemy = "nullrat";
-			GameState.FixedEncounter = false;
+			GameState.EncounterKind = "wild";
 			var packed = GD.Load<PackedScene>("res://scenes/battle/Battle.tscn");
 			Node battle = packed.Instantiate();
 			Root.AddChild(battle);
