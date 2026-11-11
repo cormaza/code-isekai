@@ -36,10 +36,8 @@ theme_override_font_sizes/font_size = 24
 horizontal_alignment = 1
 text = "Slime-Bug"
 
-[node name="EnemySprite" type="Polygon2D" parent="."]
+[node name="EnemySprite" type="Sprite2D" parent="."]
 position = Vector2(930, 300)
-color = Color(0.35, 0.85, 0.4, 1)
-polygon = PackedVector2Array(0, -60, 52, -48, 78, -15, 82, 30, 45, 57, 0, 60, -45, 57, -82, 30, -78, -15, -52, -48)
 
 [node name="EnemyHpBar" type="ProgressBar" parent="."]
 offset_left = 800.0
@@ -212,25 +210,17 @@ custom_minimum_size = Vector2(200, 52)
 theme_override_font_sizes/font_size = 22
 text = "↻ Nueva partida"
 
-[node name="PlayerSprite" type="Polygon2D" parent="."]
+[node name="PlayerSprite" type="Sprite2D" parent="."]
 position = Vector2(150, 230)
-color = Color(0.95, 0.6, 0.25, 1)
-polygon = PackedVector2Array(0, -12, 8, 0, 0, 12, -8, 0)
 
-[node name="Ally0Sprite" type="Polygon2D" parent="."]
+[node name="Ally0Sprite" type="Sprite2D" parent="."]
 position = Vector2(150, 320)
-color = Color(0.3, 0.6, 1, 1)
-polygon = PackedVector2Array(0, -12, 8, 0, 0, 12, -8, 0)
 
-[node name="Ally1Sprite" type="Polygon2D" parent="."]
+[node name="Ally1Sprite" type="Sprite2D" parent="."]
 position = Vector2(150, 410)
-color = Color(0.7, 0.4, 1, 1)
-polygon = PackedVector2Array(0, -12, 8, 0, 0, 12, -8, 0)
 
-[node name="Ally2Sprite" type="Polygon2D" parent="."]
+[node name="Ally2Sprite" type="Sprite2D" parent="."]
 position = Vector2(150, 500)
-color = Color(0.3, 0.85, 0.45, 1)
-polygon = PackedVector2Array(0, -12, 8, 0, 0, 12, -8, 0)
 
 [node name="Ally0Status" type="Label" parent="."]
 offset_left = 40.0

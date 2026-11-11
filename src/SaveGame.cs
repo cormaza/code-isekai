@@ -4,8 +4,9 @@ using Dictionary = Godot.Collections.Dictionary;
 
 /// <summary>
 /// Guardado en disco (user://code_isekai_save.json): escribe el estado de
-/// la run (nivel, XP, HP, jobs, cristales, flags, área y posición) y lo
-/// restaura. Read() no toca el estado si no hay archivo o el JSON es inválido.
+/// la run (nivel, XP, HP, jobs, cristales, flags, área, posición y quests:
+/// active_id, progress y done) y lo restaura. Read() no toca el estado si
+/// no hay archivo o el JSON es inválido.
 /// </summary>
 public static class SaveGame
 {
@@ -24,6 +25,11 @@ public static class SaveGame
 		foreach (string id in GameState.UnlockedJobs)
 		{
 			unlocked.Add(id);
+		}
+		var doneQuests = new Array();
+		foreach (string id in QuestLog.Done)
+		{
+			doneQuests.Add(id);
 		}
 		var collected = new Array();
 		foreach (string id in GameState.CollectedCrystals)
@@ -46,6 +52,9 @@ public static class SaveGame
 			["pos_x"] = pos.X,
 			["pos_y"] = pos.Y,
 			["total_wild"] = GameState.TotalWildWins,
+			["active_id"] = QuestLog.ActiveId,
+			["progress"] = QuestLog.Progress,
+			["done"] = doneQuests,
 		};
 		using var f = Godot.FileAccess.Open(Path, Godot.FileAccess.ModeFlags.Write);
 		if (f != null)
@@ -142,9 +151,35 @@ public static class SaveGame
 			GameState.DemonKingDefeated = demon;
 			GameState.TotalWildWins = totalWild;
 			GameState.AreaId = area;
+			string questActive = d.ContainsKey("active_id") ? d["active_id"].ToString() : "";
+			if (!QuestLog.Quests.ContainsKey(questActive))
+			{
+				questActive = "";
+			}
+			int questProgress = d.ContainsKey("progress") ? StrInt(d["progress"]) : 0;
+			var questDone = new System.Collections.Generic.HashSet<string>();
+			if (d.ContainsKey("done") && d["done"].VariantType == Variant.Type.Array)
+			{
+				foreach (Variant v in (Array)d["done"])
+				{
+					string id = v.ToString();
+					if (QuestLog.Quests.ContainsKey(id))
+					{
+						questDone.Add(id);
+					}
+				}
+			}
+			if (questActive != "" && questDone.Contains(questActive))
+			{
+				questActive = "";
+			}
+			QuestLog.ActiveId = questActive;
+			QuestLog.Progress = Mathf.Max(0, questProgress);
+			QuestLog.Done = questDone;
 			GameState.InDungeon = area > 0;
 			GameState.SpawnPoint = new Vector2(posX, posY);
 			GameState.CalmSteps = 120;
+			QuestLog.RefreshTracker();
 			return true;
 		}
 		catch

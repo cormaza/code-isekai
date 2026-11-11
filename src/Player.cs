@@ -11,11 +11,12 @@ public partial class Player : CharacterBody2D
 	[Export]
 	public float Speed = 200.0f;
 
-	Polygon2D _body = null!;
+	Sprite2D _body = null!;
 
 	public override void _Ready()
 	{
-		_body = GetNode<Polygon2D>("Body");
+		_body = GetNode<Sprite2D>("Body");
+		_body.Scale = new Vector2(2.0f, 2.0f);
 		RefreshJobVisual();
 	}
 
@@ -53,7 +54,7 @@ public partial class Player : CharacterBody2D
 		{
 			return;
 		}
-		_body.Color = job.Tint;
+		_body.Texture = PixelArt.Hero(job.Tint);
 		Node? label = GetTree().GetFirstNodeInGroup("job_label");
 		if (label is Label jobLabel)
 		{

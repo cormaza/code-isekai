@@ -37,6 +37,24 @@ public static class QuestLog
 			Offer = "El Wraithlord nos tira el server. ¿Lo bajás?",
 			Thanks = "¡El server respira!",
 		},
+		["golems"] = new QuestDef
+		{
+			Title = "Torre Estruendosa",
+			Target = "golem",
+			Need = 2,
+			RewardXp = 60,
+			Offer = "La torre cruje con golems. ¿Limpiás 2?",
+			Thanks = "¡La torre respira!",
+		},
+		["demonking"] = new QuestDef
+		{
+			Title = "El Rey Demonio",
+			Target = "demonking",
+			Need = 1,
+			RewardXp = 150,
+			Offer = "El Rey Demonio espera. ¿Lo terminamos?",
+			Thanks = "¡Mundo salvado!",
+		},
 	};
 
 	public static string ActiveId = "";
@@ -50,7 +68,7 @@ public static class QuestLog
 		Done = new();
 	}
 
-	/// <summary>Id de la quest ofrecida ahora, o "" si no hay oferta.</summary>
+	/// <summary>Id de la quest ofrecida: rats → boss → golems → demonking → "".</summary>
 	public static string NextOffer()
 	{
 		if (ActiveId != "")
@@ -61,9 +79,17 @@ public static class QuestLog
 		{
 			return "rats";
 		}
-		if (Done.Contains("rats") && !Done.Contains("boss"))
+		if (!Done.Contains("boss"))
 		{
 			return "boss";
+		}
+		if (!Done.Contains("golems"))
+		{
+			return "golems";
+		}
+		if (!Done.Contains("demonking"))
+		{
+			return "demonking";
 		}
 		return "";
 	}
@@ -123,7 +149,7 @@ public static class QuestLog
 		{
 			label.Text = $"📜 {q.Title}: {Progress}/{q.Need} {q.Target}";
 		}
-		else if (Done.Contains("rats") && Done.Contains("boss"))
+		else if (ActiveId == "" && NextOffer() == "")
 		{
 			label.Text = "📜 Todo hecho. ¡Al Rey Demonio!";
 		}

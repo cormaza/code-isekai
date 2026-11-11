@@ -12,10 +12,10 @@ public partial class Npc : Node2D
 
 	public override void _Ready()
 	{
-		var body = GetNodeOrNull<Polygon2D>("Body");
-		if (body != null)
+		if (GetNodeOrNull<Sprite2D>("Sprite") is Sprite2D sprite)
 		{
-			body.Color = new Color(0.5f, 0.5f, 0.6f);
+			sprite.Texture = PixelArt.Mentor();
+			sprite.Scale = new Vector2(2.0f, 2.0f);
 		}
 		var nameLabel = GetNodeOrNull<Label>("NameLabel");
 		if (nameLabel != null)
@@ -82,7 +82,7 @@ public partial class Npc : Node2D
 				hint.Text = "E: continuar";
 				_showingOffer = false;
 			}
-			else if (QuestLog.Done.Contains("rats") && QuestLog.Done.Contains("boss"))
+			else if (QuestLog.ActiveId == "" && QuestLog.NextOffer() == "")
 			{
 				text.Text = "¡El server respira! Todo hecho. ¡Al Rey Demonio!";
 				hint.Text = "E: continuar";

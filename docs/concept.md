@@ -60,8 +60,10 @@ que se tragó a los héroes anteriores.
   ✦ Nueva partida (borra el save + ResetRun → overworld). Foco diferido al visible.
 - `src/SaveGame.cs` (static, `user://code_isekai_save.json`): Write guarda
   nivel, XP, HP del player, HP de aliados, jobs, cristales, flags
-  (slime/boss/demon), job actual, área, posición y TotalWildWins;
-  Read restaura todo (SpawnPoint, InDungeon = área > 0, AreaId) o devuelve
+  (slime/boss/demon), job actual, área, posición, TotalWildWins y quests
+  (active_id, progress, done: ids completadas);
+  Read restaura todo (SpawnPoint, InDungeon = área > 0, AreaId, quests +
+  RefreshTracker) o devuelve
   false sin tocar el estado si no hay archivo o el JSON es inválido; Wipe borra.
 - Autoguardado: `World._Ready` escribe área + posición del player al entrar
   a cada mapa. Smoke `tests/SaveSmoke.cs`: save/load + carga de la torre.
@@ -86,16 +88,37 @@ que se tragó a los héroes anteriores.
   la oferta en el DialogPanel del HUD; segunda E acepta (toast
   "¡Quest aceptada: {título}!"), cierra y actualiza el tracker.
 - Tracker: "📜 {título}: {progreso}/{necesario} {objetivo}" con quest
-  activa; "📜 Hablá con el Senior Dev (oeste del spawn)" sin quest;
-  "📜 Todo hecho. ¡Al Rey Demonio!" al completar todo.
+  activa; "📜 Hablá con el Senior Dev (oeste del spawn)" si hay oferta
+  pendiente; "📜 Todo hecho. ¡Al Rey Demonio!" cuando NextOffer() == "".
 - Quests (`src/QuestLog.cs`, resetea con `GameState.ResetRun`): rats
   ("Plaga de NullRats": 3 nullrats, +40 XP) → boss ("El Wraithlord":
-  1 wraithlord, +80 XP). `Battle.DoVictory` reporta el kill y anexa
+  1 wraithlord, +80 XP) → golems ("Torre Estruendosa": 2 golems,
+  +60 XP) → demonking ("El Rey Demonio": 1 demonking, +150 XP). `Battle.DoVictory` reporta el kill y anexa
   "¡Quest completa: {título} (+{xp} XP)!" (+ level up si hay) al Say.
-  Completar cura full a la party. Tuning: las recompensas (40/80 XP)
+  Completar cura full a la party. Tuning: las recompensas (40/80/60/150 XP)
   aceleran el nivel 2-3 antes del Rey Demonio.
 - Smoke `tests/QuestSmoke.cs` (seed 9): doble E → 3×nullrat → doble E →
-  wraithlord → PASS.
+  wraithlord → PASS. Smoke `tests/QuestSaveSmoke.cs` (seed 4, sin escenas):
+  cadena rats → boss → golems (1/2) → Write → ResetRun → Read (activa +
+  progreso + done + área + spawn) → golems → demonking → PASS.
+
+## Sprites pixel-art propios (sin assets)
+- `src/PixelArt.cs` (static): `Sprite(rows, palette)` construye un
+  ImageTexture RGBA8 desde filas de strings (' ' = transparente; las filas
+  se rellenan a la más larga) + `Dictionary<char, Color>`. Filtro nearest
+  global (project.godot), legibles escalados x2-x4.
+- Factories y tamaños: Hero(tint) 14x18 (túnica=tint del job), Slime(tint)
+  14x12, Wraith(tint) 12x16 (base rasgada transparente), Golem(tint) 14x14
+  (núcleo cyan), DemonKing(tint) 16x18, Gem(tint) 10x14, Mentor() 12x18
+  (gris + barba + báculo). `Enemy(id, tint)` mapea id → factory
+  (wraith/wraithlord → Wraith, golem → Golem, demonking → DemonKing,
+  resto → Slime); el tint vivo sale de `GameState.Enemies` vía Modulate.
+- Dónde están: la textura se asigna en `_Ready` (Player/Ally Body x2,
+  SlimeBug Sprite x3·Scale, Crystal Gem x3 con pulso, Npc Sprite x2,
+  Battle EnemySprite x4·Scale + party x2 y cambio de job en RefreshUi).
+  FlashEnemy anima modulate a rojo y vuelve al tint del enemigo.
+- Para agregar un sprite: dibujá las filas con caracteres, declará la
+  paleta en una factory nueva y asigná `Sprite2D.Texture` en el `_Ready`.
 
 ## SFX procedurales (sin assets)
 - `src/Sfx.cs`: tonos generados en runtime como AudioStreamWAV 16-bit a
@@ -151,4 +174,6 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
 8. ~~Guardado en disco + contenido extra (segunda área, más puzzles).~~ Hecho
    (título con continuar/nueva partida, autoguardado al entrar a mapas,
    Torre del Stack + Stack Golem, 3 puzzles nuevos, 8 smokes).
-9. Más quests/áreas + sprites propios + balance.
+9. Más quests/áreas + sprites propios + balance. Hecho (4 quests con
+   persistencia + 7 sprites en código; smokes: 10).
+10. Animaciones de caminar/atacar + balance + audio real opcional.

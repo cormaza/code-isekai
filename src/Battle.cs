@@ -48,6 +48,7 @@ public partial class Battle : Control
 
 	GameState.EnemyDef _def;
 	int _enemyHp;
+	string _playerJobShown = "";
 	int _abilityUses = AbilityUsesPerBattle;
 	readonly int[] _allyUses = { AbilityUsesPerBattle, AbilityUsesPerBattle, AbilityUsesPerBattle };
 
@@ -59,9 +60,9 @@ public partial class Battle : Control
 	Label _playerHpLabel = null!;
 	ProgressBar _playerHpBar = null!;
 	Label _xpLabel = null!;
-	Polygon2D _enemySprite = null!;
-	Polygon2D _playerSprite = null!;
-	readonly Polygon2D[] _allySprites = new Polygon2D[3];
+	Sprite2D _enemySprite = null!;
+	Sprite2D _playerSprite = null!;
+	readonly Sprite2D[] _allySprites = new Sprite2D[3];
 	readonly Label[] _allyStatus = new Label[3];
 	readonly ProgressBar[] _allyBars = new ProgressBar[3];
 	Button _attackButton = null!;
@@ -94,17 +95,18 @@ public partial class Battle : Control
 		_playerHpLabel = GetNode<Label>("PlayerHpLabel");
 		_playerHpBar = GetNode<ProgressBar>("PlayerHpBar");
 		_xpLabel = GetNode<Label>("XpLabel");
-		_enemySprite = GetNode<Polygon2D>("EnemySprite");
-		_playerSprite = GetNode<Polygon2D>("PlayerSprite");
+		_enemySprite = GetNode<Sprite2D>("EnemySprite");
+		_playerSprite = GetNode<Sprite2D>("PlayerSprite");
 		for (int i = 0; i < 3; i++)
 		{
-			_allySprites[i] = GetNode<Polygon2D>($"Ally{i}Sprite");
+			_allySprites[i] = GetNode<Sprite2D>($"Ally{i}Sprite");
 			_allyStatus[i] = GetNode<Label>($"Ally{i}Status");
 			_allyBars[i] = GetNode<ProgressBar>($"Ally{i}Bar");
 			string allyJob = GameState.AllyJobs[i];
 			if (GameState.Jobs.TryGetValue(allyJob, out GameState.JobDef ajob))
 			{
-				_allySprites[i].Color = ajob.Tint;
+				_allySprites[i].Texture = PixelArt.Hero(ajob.Tint);
+				_allySprites[i].Scale = new Vector2(2.0f, 2.0f);
 			}
 		}
 		_attackButton = GetNode<Button>("Menu/AttackButton");
@@ -121,8 +123,10 @@ public partial class Battle : Control
 		_endStats = GetNode<Label>("EndPanel/VBox/EndStats");
 
 		_enemyName.Text = _def.Name;
-		_enemySprite.Color = _def.Tint;
-		_enemySprite.Scale = new Vector2(_def.Scale, _def.Scale);
+		_enemySprite.Texture = PixelArt.Enemy(EnemyId, _def.Tint);
+		_enemySprite.Modulate = _def.Tint;
+		_enemySprite.Scale = new Vector2(_def.Scale * 4.0f, _def.Scale * 4.0f);
+		_playerSprite.Scale = new Vector2(2.0f, 2.0f);
 		_enemyHpBar.MaxValue = _def.MaxHp;
 		_playerHpBar.MaxValue = GameState.PlayerMaxHp;
 		RefreshUi();
@@ -603,7 +607,12 @@ public partial class Battle : Control
 		_playerHpLabel.Text = $"HP {GameState.PlayerHp}/{GameState.PlayerMaxHp}";
 		_playerHpBar.MaxValue = GameState.PlayerMaxHp;
 		_playerHpBar.Value = GameState.PlayerHp;
-		_playerSprite.Color = job.Tint;
+		if (_playerJobShown != GameState.CurrentJob)
+		{
+			_playerJobShown = GameState.CurrentJob;
+			_playerSprite.Texture = PixelArt.Hero(job.Tint);
+			_playerSprite.Scale = new Vector2(2.0f, 2.0f);
+		}
 		for (int i = 0; i < 3; i++)
 		{
 			int hp = Mathf.Max(0, GameState.AllyHp[i]);
@@ -636,6 +645,6 @@ public partial class Battle : Control
 	{
 		_enemySprite.Modulate = new Color(1.0f, 0.35f, 0.35f);
 		Tween tw = CreateTween();
-		tw.TweenProperty(_enemySprite, "modulate", new Color(1, 1, 1), 0.25);
+		tw.TweenProperty(_enemySprite, "modulate", _def.Tint, 0.25);
 	}
 }

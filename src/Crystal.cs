@@ -14,7 +14,8 @@ public partial class Crystal : Area2D
 	public string CrystalId = "crystal_frontend";
 
 	float _time;
-	Polygon2D _gem = null!;
+	Sprite2D _gem = null!;
+	const float BaseScale = 3.0f;
 
 	public override void _Ready()
 	{
@@ -23,11 +24,12 @@ public partial class Crystal : Area2D
 			QueueFree();
 			return;
 		}
-		_gem = GetNode<Polygon2D>("Gem");
+		_gem = GetNode<Sprite2D>("Gem");
 		if (GameState.Jobs.TryGetValue(JobId, out GameState.JobDef job))
 		{
-			_gem.Color = job.Tint;
+			_gem.Texture = PixelArt.Gem(job.Tint);
 		}
+		_gem.Scale = new Vector2(BaseScale, BaseScale);
 		BodyEntered += OnBodyEntered;
 	}
 
@@ -38,7 +40,7 @@ public partial class Crystal : Area2D
 			return;
 		}
 		_time += (float)delta;
-		float s = 1.0f + Mathf.Sin(_time * 4.0f) * 0.08f;
+		float s = BaseScale * (1.0f + Mathf.Sin(_time * 4.0f) * 0.08f);
 		_gem.Scale = new Vector2(s, s);
 	}
 

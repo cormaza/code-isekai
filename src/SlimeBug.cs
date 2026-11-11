@@ -21,10 +21,11 @@ public partial class SlimeBug : Area2D
 		{
 			def = GameState.Enemies["slime"];
 		}
-		if (GetNodeOrNull<Polygon2D>("Blob") is Polygon2D blob)
+		if (GetNodeOrNull<Sprite2D>("Sprite") is Sprite2D sprite)
 		{
-			blob.Color = def.Tint;
-			blob.Scale = new Vector2(def.Scale, def.Scale);
+			sprite.Texture = PixelArt.Enemy(EnemyId, def.Tint);
+			sprite.Modulate = def.Tint;
+			sprite.Scale = new Vector2(def.Scale * 3.0f, def.Scale * 3.0f);
 		}
 		BodyEntered += OnBodyEntered;
 	}

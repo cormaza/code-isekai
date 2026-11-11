@@ -17,9 +17,11 @@ public partial class Ally : Node2D
 			JobIndex = 0;
 		}
 		string jobId = GameState.AllyJobs[JobIndex];
+		var body = GetNode<Sprite2D>("Body");
+		body.Scale = new Vector2(2.0f, 2.0f);
 		if (GameState.Jobs.TryGetValue(jobId, out GameState.JobDef job))
 		{
-			GetNode<Polygon2D>("Body").Color = job.Tint;
+			body.Texture = PixelArt.Hero(job.Tint);
 		}
 		GetNode<Label>("NameLabel").Text = GameState.AllyNames[JobIndex];
 	}

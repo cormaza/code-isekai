@@ -59,7 +59,7 @@ src/GameState.cs       Stats + 4 jobs, desbloqueos, encuentro actual, gracia,
                      tabla de enemigos (slime/nullrat/wraith/golem/wraithlord/demonking),
                      AreaId (0 overworld, 1 mazmorra, 2 torre), niveles 1-3,
                      flags de boss/Rey Demonio, ResetRun
-src/SaveGame.cs        Guardado en disco (user://code_isekai_save.json): Write/Read/Has/Wipe
+src/SaveGame.cs        Guardado en disco (user://code_isekai_save.json): Write/Read/Has/Wipe (incluye quests: active_id, progress, done)
 src/Title.cs           Lógica del título (continuar según AreaId, nueva partida)
 src/Crystal.cs         Lógica del cristal (toast vía grupo "toast")
 src/SlimeBug.cs        Slime fijo del norte + boss de la mazmorra (EnemyId) al tocar al Player
@@ -67,10 +67,11 @@ src/Portal.cs          Portal overworld ↔ mazmorra + DemonPortal (batalla fina
 src/Battle.cs          Turnos de la party vs slime/nullrat/wraith/wraithlord/Rey Demonio,
                      dano, reto de código, huida, victoria/derrota, level up,
                      final del juego (EndPanel + nueva partida), SFX y progreso de quests
-src/QuestLog.cs        Side-quests del Senior Dev (rats → boss): oferta, aceptada,
+src/QuestLog.cs        Side-quests del Senior Dev (rats → boss → golems → demonking): oferta, aceptada,
                      progreso por kills, recompensa XP + cura, tracker del HUD
 src/Npc.cs             Senior Dev: primera E abre la oferta, segunda E acepta y cierra
 src/Sfx.cs             Efectos procedurales sin assets (WAV 16-bit a 22050 Hz, Dummy-safe)
+src/PixelArt.cs        Sprites pixel-art propios generados en código (Hero/Slime/Wraith/Golem/DemonKing/Gem/Mentor + Enemy por id), sin assets
 src/World.cs           TileSet + mapa 40x23 + encuentros aleatorios en pasto
 tests/MovementSmoke.cs Smoke headless: camina y verifica choque contra muro
 tests/EncounterSmoke.cs Smoke headless: encuentro fijo, pelea y vuelta al mapa
@@ -81,6 +82,7 @@ tests/SaveSmoke.cs     Smoke: save/load (Lv2 + backend + AreaId 1 + spawn) y car
 tests/PuzzleSmoke.cs   Smoke: reto correcto premia (25-35) e incorrecto castiga (contraataque)
 tests/BossSmoke.cs     Smoke: boss de la mazmorra, Rey Demonio y nueva partida
 tests/QuestSmoke.cs    Smoke: 2 quests encadenadas + SFX
+tests/QuestSaveSmoke.cs Smoke: 4 quests + persistencia en save (golems a medias → ResetRun → Read → cadena completa)
 icon.svg               Ícono del proyecto
 docs/concept.md        Visión del juego (jobs, batalla, progresión)
 ```
@@ -136,9 +138,17 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   la segunda la acepta (toast + tracker). Tracker del HUD:
   "📜 {quest}: {progreso}/{necesario} {objetivo}". 2 quests encadenadas:
   **Plaga de NullRats** (cazar 3 nullrats, +40 XP) → **El Wraithlord**
-  (bajar 1 wraithlord, +80 XP); cada quest completa cura full a la party.
+  (bajar 1 wraithlord, +80 XP) → **Torre Estruendosa** (limpiar 2 Stack
+  Golems, +60 XP) → **El Rey Demonio** (derrotar 1 demonking, +150 XP);
+  cada quest completa cura full a la party. Las quests persisten en el save
+  (quest activa + progreso + completadas) y se restauran al continuar.
   Sin oferta muestra el estado (quest activa o "Todo hecho. ¡Al Rey Demonio!").
-- **SFX procedurales (sin assets):** `src/Sfx.cs` genera WAV 16-bit a
+- **Sprites propios (sin assets):** `src/PixelArt.cs` genera los píxeles en
+  código (mapas de strings + paleta, ' ' = transparente, filtro nearest global).
+  Héroe con la túnica del job (mapa y batalla, sigue cambios con J y Job en
+  batalla), enemigos por id (slime/wraith/golem/demonking, con el tint de
+  `GameState.Enemies`; FlashEnemy vuelve al tint, no a blanco), gema del color
+  del job (con pulso), Mentor con barba y báculo. Sin polígonos placeholder.
   22050 Hz en runtime (sine con decay; buzz square; portal con rampa
   200→1200 Hz), a -12 dB, hijo de Root que se libera al terminar.
   Funciona con driver Dummy (headless sin errores). Suenan en:
@@ -166,6 +176,6 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   cada 48px al 28%.
 - **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> Próximo paso sugerido: más quests/áreas + sprites propios + balance.
+> Próximo paso sugerido: animaciones de caminar/atacar + balance + audio real opcional.
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.

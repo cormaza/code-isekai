@@ -14,10 +14,4 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 text = "?"
 
-[node name="Body" type="Polygon2D" parent="."]
-color = Color(0.3, 0.6, 1, 1)
-polygon = PackedVector2Array(0, -12, 8, 0, 0, 12, -8, 0)
-
-[node name="Head" type="Polygon2D" parent="."]
-color = Color(0.96, 0.8, 0.62, 1)
-polygon = PackedVector2Array(0, -10, 4, -6, 0, -2, -4, -6)
+[node name="Body" type="Sprite2D" parent="."]
