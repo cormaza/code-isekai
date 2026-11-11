@@ -30,6 +30,7 @@ public partial class Battle : Control
 	const string MainScene = "res://main.tscn";
 	const string DungeonScene = "res://scenes/world/Dungeon.tscn";
 	const string TowerScene = "res://scenes/world/Tower.tscn";
+	const string CryptScene = "res://scenes/world/Crypt.tscn";
 	const string BattleScene = "res://scenes/battle/Battle.tscn";
 	const int AbilityUsesPerBattle = 2;
 	const int PuzzleUsesPerBattle = 1;
@@ -673,6 +674,7 @@ public partial class Battle : Control
 		{
 			1 => DungeonScene,
 			2 => TowerScene,
+			3 => CryptScene,
 			_ => MainScene,
 		});
 	}

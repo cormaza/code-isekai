@@ -33,3 +33,10 @@ TargetScene = "res://scenes/world/Dungeon.tscn"
 Spawn = Vector2(1008, 560)
 AreaId = 1
 GoDungeon = true
+
+[node name="CryptPortal" parent="." instance=ExtResource("4")]
+position = Vector2(656, 176)
+TargetScene = "res://scenes/world/Crypt.tscn"
+Spawn = Vector2(656, 624)
+AreaId = 3
+GoDungeon = true

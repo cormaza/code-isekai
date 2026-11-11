@@ -12,6 +12,7 @@ public partial class Title : Control
 	const string MainScene = "res://main.tscn";
 	const string DungeonScene = "res://scenes/world/Dungeon.tscn";
 	const string TowerScene = "res://scenes/world/Tower.tscn";
+	const string CryptScene = "res://scenes/world/Crypt.tscn";
 	const string TitleMusic = "res://assets/audio/title_loop.wav";
 
 	Button _continueButton = null!;
@@ -59,6 +60,7 @@ public partial class Title : Control
 		{
 			1 => DungeonScene,
 			2 => TowerScene,
+			3 => CryptScene,
 			_ => MainScene,
 		};
 		GetTree().ChangeSceneToFile(scene);

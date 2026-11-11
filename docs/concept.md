@@ -12,12 +12,15 @@ que se tragó a los héroes anteriores.
   (40% NullRat / 25% Slime salvaje / 35% Legacy Wraith).
 - Torre del Stack: sin caminos, cada 48px, 28% de encuentro
   (50% Stack Golem / 30% Legacy Wraith / 20% Wraithlord).
+- Cripta del Null: sin caminos, cada 48px, 30% de encuentro
+  (50% Serpiente Segfault / 30% Legacy Wraith / 20% Wraithlord).
 - 120px de gracia tras cada batalla (huida, victoria o portal); 60px al cargar el mapa.
 - Constantes en `World.cs` (RollEveryPx/EncounterChance + variantes Dungeon/Tower) y tabla de
   enemigos en `GameState.cs` (dict Enemies: slime 36 HP, nullrat 26 HP,
-  wraith 55 HP, golem 75 HP atk 12-16 XP 40, wraithlord 160 HP atk 14-20 XP 100,
+  wraith 55 HP, golem 75 HP atk 12-16 XP 40, segfault 85 HP atk 13-17 XP 55,
+  wraithlord 160 HP atk 14-20 XP 100,
   demonking 300 HP atk 18-25 XP 250).
-- Área actual `GameState.AreaId`: 0 overworld, 1 mazmorra, 2 torre.
+- Área actual `GameState.AreaId`: 0 overworld, 1 mazmorra, 2 torre, 3 cripta.
   `InDungeon` queda como reflejo (AreaId > 0); los portales setean ambos.
 - Clase de encuentro `EncounterKind`: "wild" (aleatorio), "slime" (fijo),
   "boss" (mazmorra), "demonking" (final). Victoria: slime→SlimeDefeated,
@@ -35,6 +38,7 @@ que se tragó a los héroes anteriores.
   | Slime-Bug | 36 | 7-11 | 20 |
   | Legacy Wraith | 55 | 9-14 | 30 |
   | Stack Golem | 75 | 12-16 | 40 |
+  | Serpiente Segfault | 85 | 13-17 | 55 |
   | Wraithlord Legacy | 160 | 14-20 | 100 |
   | Rey Demonio | 300 | 18-25 | 250 |
 - Nivel 4 en 250 XP; fórmulas genéricas (Level-1)*10 HP y (Level-1)*2 ATK
@@ -71,6 +75,17 @@ que se tragó a los héroes anteriores.
   en (5,4), (11,6), (26,4), (31,6), (8,13), (14,17), (26,14), (33,16), (5,18),
   (17,10), (22,16) (corredores col 19-20, fila 11, spawn y salida libres).
 - Enemigo propio: Stack Golem (75 HP, atk 12-16, 40 XP, tint 0.45/0.5/0.6, escala 1.25).
+
+## Cripta del Null (tercera área)
+- Portal en la torre (656, 176) → `scenes/world/Crypt.tscn` (spawn 656, 624);
+  portal de salida (656, 560) → torre (spawn 656, 240, pisable: col 20 fila 7 libre).
+- Paleta verdosa oscura (piso 0.08/0.14/0.10, muro 0.04/0.07/0.05), sin caminos, 10 pilares
+  en (5,5), (11,7), (26,5), (31,7), (8,14), (14,18), (26,15), (33,17), (5,19),
+  (17,12) (corredores col 19-20, fila 11, spawn y salida libres).
+- Enemigo propio: Serpiente Segfault (85 HP, atk 13-17, 55 XP, tint 0.85/0.45/0.15,
+  escala 1.3; sprite 16x12 naranja con colmillos blancos y ojos rojos).
+- NPC Junior Dev (560, 560) junto a la salida: instancia de Mentor.tscn con
+  `DisplayName` = "Junior Dev" (export nuevo en `Npc.cs`; el Senior Dev usa el default).
 
 ## Guardado + título
 - Scena principal: `scenes/ui/Title.tscn` (CODE ISEKAI + subtítulo):
@@ -111,12 +126,16 @@ que se tragó a los héroes anteriores.
 - Quests (`src/QuestLog.cs`, resetea con `GameState.ResetRun`): rats
   ("Plaga de NullRats": 3 nullrats, +40 XP) → boss ("El Wraithlord":
   1 wraithlord, +80 XP) → golems ("Torre Estruendosa": 2 golems,
-  +60 XP) → demonking ("El Rey Demonio": 1 demonking, +150 XP). `Battle.DoVictory` reporta el kill y anexa
+  +60 XP) → demonking ("El Rey Demonio": 1 demonking, +150 XP) → crypt
+  ("Siseo en la Cripta": 2 segfault, +70 XP) → keeper ("El Guardián del Null":
+  1 wraithlord, +120 XP). `Battle.DoVictory` reporta el kill y anexa
   "¡Quest completa: {título} (+{xp} XP)!" (+ level up si hay) al Say.
   Completar cura full a la party. Tuning: las recompensas (40/80/60/150 XP)
-  aceleran el nivel 2-4 antes del Rey Demonio.
+  aceleran el nivel 2-4 antes del Rey Demonio (y crypt/keeper premian la cripta).
 - Smoke `tests/QuestSmoke.cs` (seed 9): doble E → 3×nullrat → doble E →
-  wraithlord → PASS. Smoke `tests/QuestSaveSmoke.cs` (seed 4, sin escenas):
+  wraithlord → PASS. Smoke `tests/CryptSmoke.cs` (seed 8): cadena API rats → boss →
+  golems → demonking → Accept crypt → 1 segfault → mapa Crypt → salvaje → vuelta a
+  Crypt con Progress >= 1 → PASS. Smoke `tests/QuestSaveSmoke.cs` (seed 4, sin escenas):
   cadena rats → boss → golems (1/2) → Write → ResetRun → Read (activa +
   progreso + done + área + spawn) → golems → demonking → PASS.
 
@@ -227,5 +246,6 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
 11. ~~Balance general + audio real.~~ Hecho (modelo de rondas + nivel 4,
     WAVs chiptune generados por `tools/make_audio.py`, música en título y
     batalla; smokes: 12).
-12. quest del Rey Demonio jugable? NO — ya existe; próximo: segunda área con
-    quest propia + sprites de NPCs extra.
+12. ~~cadena de 6 quests + tercera área (cripta).~~ Hecho (Siseo en la Cripta +
+    El Guardián del Null, Serpiente Segfault, Junior Dev, smoke CryptSmoke; smokes: 13).
+13. Jefe de la cripta + sprites de NPCs extra + balance fino.

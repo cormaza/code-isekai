@@ -45,6 +45,7 @@ scenes/ui/Title.tscn              Pantalla de título (CODE ISEKAI, Continuar/Nu
 scenes/world/World.tscn           Mapa (Ground + Walls TileMapLayer, TileSet en runtime)
 scenes/world/Dungeon.tscn         Mazmorra norte (paleta oscura, pilares, otro pool)
 scenes/world/Tower.tscn           Torre del Stack (paleta azulada, pilares propios, golems)
+scenes/world/Crypt.tscn           Cripta del Null (paleta verdosa oscura, pilares propios, segfaults)
 scenes/party/Ally.tscn            Aliado seguidor (Tux/Ada/Grace, fila india por trail)
 scenes/party/Portal.tscn          Portal overworld ↔ mazmorra (spawn + InDungeon)
 scenes/player/Player.tscn  Heroe CharacterBody2D 4 direcciones + Camera2D
@@ -56,8 +57,8 @@ src/Main.cs            Script raiz / futuro GameManager
 src/World.cs           TileSet + mapa 40x23 + trail de la party + encuentros (overworld/mazmorra)
 src/Player.cs          Movimiento d-pad + J (cambia job) + tinta por job + caminata 2 frames (0.18s/paso)
 src/GameState.cs       Stats + 4 jobs, desbloqueos, encuentro actual, gracia,
-                     tabla de enemigos (slime/nullrat/wraith/golem/wraithlord/demonking),
-                     AreaId (0 overworld, 1 mazmorra, 2 torre), niveles 1-4,
+                     tabla de enemigos (slime/nullrat/wraith/golem/segfault/wraithlord/demonking),
+                     AreaId (0 overworld, 1 mazmorra, 2 torre, 3 cripta), niveles 1-4,
                      flags de boss/Rey Demonio, ResetRun
 src/SaveGame.cs        Guardado en disco (user://code_isekai_save.json): Write/Read/Has/Wipe (incluye quests: active_id, progress, done)
 src/Title.cs           Lógica del título (continuar según AreaId, nueva partida, música title_loop)
@@ -68,11 +69,11 @@ src/Battle.cs          Turnos de la party vs slime/nullrat/wraith/wraithlord/Rey
                      dano, reto de código, huida, victoria/derrota, level up,
                      final del juego (EndPanel + nueva partida), SFX, música battle_loop/victory,
                      lunge de ataque (tween X 36px) + bob idle (solo Y)
-src/QuestLog.cs        Side-quests del Senior Dev (rats → boss → golems → demonking): oferta, aceptada,
+src/QuestLog.cs        Side-quests (rats → boss → golems → demonking → crypt → keeper): oferta, aceptada,
                      progreso por kills, recompensa XP + cura, tracker del HUD
-src/Npc.cs             Senior Dev: primera E abre la oferta, segunda E acepta y cierra
+src/Npc.cs             Senior Dev (+ Junior Dev en la cripta vía DisplayName): primera E abre la oferta, segunda E acepta y cierra
 src/Sfx.cs             Efectos procedurales sin assets (WAV 16-bit a 22050 Hz, Dummy-safe)
-src/PixelArt.cs        Sprites pixel-art propios generados en código (Hero 2 frames/Slime/Wraith/Golem/DemonKing/Gem/Mentor + Enemy por id), sin assets
+src/PixelArt.cs        Sprites pixel-art propios generados en código (Hero 2 frames/Slime/Wraith/Golem/Segfault/DemonKing/Gem/Mentor + Enemy por id), sin assets
 src/World.cs           TileSet + mapa 40x23 + encuentros aleatorios en pasto
 tests/MovementSmoke.cs Smoke headless: camina y verifica choque contra muro
 tests/EncounterSmoke.cs Smoke headless: encuentro fijo, pelea y vuelta al mapa
@@ -84,6 +85,7 @@ tests/PuzzleSmoke.cs   Smoke: reto correcto premia (25-35) e incorrecto castiga 
 tests/BossSmoke.cs     Smoke: boss de la mazmorra, Rey Demonio y nueva partida
 tests/QuestSmoke.cs    Smoke: 2 quests encadenadas + SFX
 tests/QuestSaveSmoke.cs Smoke: 4 quests + persistencia en save (golems a medias → ResetRun → Read → cadena completa)
+tests/CryptSmoke.cs    Smoke: cripta (AreaId 3) + quests 5-6 (cadena API 1-4 → crypt 1/2 → salvaje en mapa → vuelta a Crypt)
 tests/AnimSmoke.cs     Smoke: caminar anima 2 frames (Player.StepIndex + Ally0.StepIndex)
 tests/AudioSmoke.cs    Smoke: música real en título y batalla + 1 ataque sin ERROR
 tools/make_audio.py    Generador chiptune (solo stdlib): battle/title/victory WAVs 22050 Hz mono 16-bit
@@ -127,6 +129,13 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
 # SMOKE PASS: quests + sfx. (exit 0)
 ```
 
+## Verificar cripta (headless)
+
+```bash
+godot-mono --headless --path . --script res://tests/CryptSmoke.cs
+# SMOKE PASS: cripta + quests 5-6. (exit 0)
+```
+
 ## Concepto corto
 
 - **Fantasía:** dev moderno cae en mundo mágico; la "magia" son sus skills de ingeniería.
@@ -141,10 +150,12 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
 - **Side-quests (Senior Dev):** NPC al oeste del spawn (560, 368, camino
   seguro). Acercate (<56px) y pulsá **E**: la primera E muestra la oferta,
   la segunda la acepta (toast + tracker). Tracker del HUD:
-  "📜 {quest}: {progreso}/{necesario} {objetivo}". 2 quests encadenadas:
+  "📜 {quest}: {progreso}/{necesario} {objetivo}". 6 quests encadenadas:
   **Plaga de NullRats** (cazar 3 nullrats, +40 XP) → **El Wraithlord**
   (bajar 1 wraithlord, +80 XP) → **Torre Estruendosa** (limpiar 2 Stack
-  Golems, +60 XP) → **El Rey Demonio** (derrotar 1 demonking, +150 XP);
+  Golems, +60 XP) → **El Rey Demonio** (derrotar 1 demonking, +150 XP) →
+  **Siseo en la Cripta** (limpiar 2 Serpientes Segfault, +70 XP) →
+  **El Guardián del Null** (bajar 1 wraithlord, +120 XP);
   cada quest completa cura full a la party. Las quests persisten en el save
   (quest activa + progreso + completadas) y se restauran al continuar.
   Sin oferta muestra el estado (quest activa o "Todo hecho. ¡Al Rey Demonio!").
@@ -166,6 +177,7 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   | Slime-Bug | 36 | 7-11 | 20 |
   | Legacy Wraith | 55 | 9-14 | 30 |
   | Stack Golem | 75 | 12-16 | 40 |
+  | Serpiente Segfault | 85 | 13-17 | 55 |
   | Wraithlord Legacy | 160 | 14-20 | 100 |
   | Rey Demonio | 300 | 18-25 | 250 |
   Nivel 4 en 250 XP; fórmulas genéricas (Level-1)*10 HP y (Level-1)*2 ATK
@@ -211,8 +223,14 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   (spawn 1008, 560). Paleta azulada, 11 pilares, pool propio:
   50% Stack Golem (75 HP, atk 12-16, 40 XP) / 30% Legacy Wraith / 20% Wraithlord,
   cada 48px al 28%.
+- **Cripta del Null (área 3):** portal en la torre (656, 176) →
+  `scenes/world/Crypt.tscn` (spawn 656, 624); salida (656, 560) → torre
+  (spawn 656, 240). Paleta verdosa oscura, 10 pilares, pool propio:
+  50% Serpiente Segfault (85 HP, atk 13-17, 55 XP) / 30% Legacy Wraith /
+  20% Wraithlord, cada 48px al 30%. NPC **Junior Dev** (560, 560) junto a la
+  salida: mismo diálogo de quests que el Senior Dev (export `DisplayName`).
 - **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> quest del Rey Demonio jugable? NO — ya existe; próximo: segunda área con quest propia + sprites de NPCs extra.
+> cadena completa de 6 quests jugable. Próximo: jefe de la cripta + sprites de NPCs extra + balance fino.
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.

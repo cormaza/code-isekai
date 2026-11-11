@@ -7,6 +7,9 @@ using Godot;
 /// </summary>
 public partial class Npc : Node2D
 {
+	[Export]
+	public string DisplayName = "Senior Dev";
+
 	bool _showingOffer;
 	bool _eHeld;
 
@@ -20,7 +23,7 @@ public partial class Npc : Node2D
 		var nameLabel = GetNodeOrNull<Label>("NameLabel");
 		if (nameLabel != null)
 		{
-			nameLabel.Text = "Senior Dev";
+			nameLabel.Text = DisplayName;
 		}
 		QuestLog.RefreshTracker();
 	}
@@ -69,7 +72,7 @@ public partial class Npc : Node2D
 		if (!panel.Visible)
 		{
 			string offer = QuestLog.NextOffer();
-			speaker.Text = "Senior Dev";
+			speaker.Text = DisplayName;
 			if (offer != "" && QuestLog.Quests.TryGetValue(offer, out QuestLog.QuestDef q))
 			{
 				text.Text = q.Offer;

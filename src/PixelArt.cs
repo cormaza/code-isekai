@@ -278,12 +278,41 @@ public static class PixelArt
 		}, palette);
 	}
 
+	/// <summary>Serpiente 16x12: cuerpo naranja, colmillos blancos, ojos rojos.</summary>
+	public static ImageTexture Segfault()
+	{
+		var palette = new Dictionary<char, Color>
+		{
+			['o'] = new Color(0.85f, 0.45f, 0.15f),
+			['d'] = new Color(0.45f, 0.22f, 0.07f),
+			['w'] = Colors.White,
+			['r'] = new Color(1.0f, 0.16f, 0.16f),
+			['k'] = new Color(0.08f, 0.05f, 0.03f),
+		};
+		return Sprite(new[]
+		{
+			"................",
+			"....oooooooo....",
+			"...ooddddddoo...",
+			"..ooddrrrrddoo..",
+			"..oodrrrrrrdoo..",
+			"...ooddddddoo...",
+			"....oooooooo....",
+			"..doooooooooood.",
+			".dooooooooooooood",
+			".doowoooooowood..",
+			"..doooooooooood..",
+			"...dddddddddd....",
+		}, palette);
+	}
+
 	/// <summary>Sprite de enemigo por id (tint de GameState.Enemies).</summary>
 	public static ImageTexture Enemy(string enemyId, Color tint) => enemyId switch
 	{
 		"wraith" or "wraithlord" => Wraith(tint),
 		"golem" => Golem(tint),
 		"demonking" => DemonKing(tint),
+		"segfault" => Segfault(),
 		_ => Slime(tint),
 	};
 }

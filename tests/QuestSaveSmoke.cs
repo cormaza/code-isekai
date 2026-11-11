@@ -8,7 +8,8 @@ using Godot;
 /// SaveGame.Write(2, (300,400)); ResetRun(); assert base (ActiveId "" y Done
 /// vacío); Read()→true; assert ActiveId=="golems", Progress==1, Done=[rats,boss],
 /// AreaId y SpawnPoint; OnKill("golem") → Done golems; Accept("demonking")→true;
-/// OnKill("demonking") → Done demonking; Wipe() → PASS.
+/// OnKill("demonking") → Done demonking; NextOffer()=="crypt" (la cadena
+/// sigue con quests 5-6); Wipe() → PASS.
 /// Asserts de XP relativos (solo XP>0 tras recompensas). FAIL honesto.
 /// Corre con: godot-mono --headless --path . --script res://tests/QuestSaveSmoke.cs
 /// Sale con código 0 (PASS) o 1 (FAIL).
@@ -149,12 +150,12 @@ public partial class QuestSaveSmoke : SceneTree
 			Fail($"XP={GameState.Xp} tras completar demonking (esperaba >0).");
 			return;
 		}
-		if (QuestLog.NextOffer() != "")
+		if (QuestLog.NextOffer() != "crypt")
 		{
-			Fail($"NextOffer={QuestLog.NextOffer()} con todo completo (esperaba \"\").");
+			Fail($"NextOffer={QuestLog.NextOffer()} tras demonking (esperaba \"crypt\"; la cadena sigue).");
 			return;
 		}
-		GD.Print($"SMOKE: demonking OK (Done=[{DoneStr()}], XP={GameState.Xp}).");
+		GD.Print($"SMOKE: demonking OK (Done=[{DoneStr()}], XP={GameState.Xp}). Siguiente: crypt.");
 
 		SaveGame.Wipe();
 		GD.Print("SMOKE PASS: quests persisten y la cadena completa funciona.");

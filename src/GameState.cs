@@ -93,6 +93,11 @@ public static class GameState
 			Name = "Stack Golem", MaxHp = 75, AtkMin = 12, AtkMax = 16, Xp = 40,
 			Tint = new Color(0.45f, 0.50f, 0.60f), Scale = 1.25f,
 		},
+		["segfault"] = new EnemyDef
+		{
+			Name = "Serpiente Segfault", MaxHp = 85, AtkMin = 13, AtkMax = 17, Xp = 55,
+			Tint = new Color(0.85f, 0.45f, 0.15f), Scale = 1.3f,
+		},
 	};
 
 	// Party: el player + 3 aliados con jobs fijos.

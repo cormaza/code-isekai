@@ -55,6 +55,24 @@ public static class QuestLog
 			Offer = "El Rey Demonio espera. ¿Lo terminamos?",
 			Thanks = "¡Mundo salvado!",
 		},
+		["crypt"] = new QuestDef
+		{
+			Title = "Siseo en la Cripta",
+			Target = "segfault",
+			Need = 2,
+			RewardXp = 70,
+			Offer = "Algo sisea en la cripta. ¿Limpiás 2 serpientes?",
+			Thanks = "¡La cripta respira!",
+		},
+		["keeper"] = new QuestDef
+		{
+			Title = "El Guardián del Null",
+			Target = "wraithlord",
+			Need = 1,
+			RewardXp = 120,
+			Offer = "El Guardián del Null merodea. ¿Lo bajás?",
+			Thanks = "¡El Null retrocede!",
+		},
 	};
 
 	public static string ActiveId = "";
@@ -68,7 +86,7 @@ public static class QuestLog
 		Done = new();
 	}
 
-	/// <summary>Id de la quest ofrecida: rats → boss → golems → demonking → "".</summary>
+	/// <summary>Id de la quest ofrecida: rats → boss → golems → demonking → crypt → keeper → "".</summary>
 	public static string NextOffer()
 	{
 		if (ActiveId != "")
@@ -90,6 +108,14 @@ public static class QuestLog
 		if (!Done.Contains("demonking"))
 		{
 			return "demonking";
+		}
+		if (!Done.Contains("crypt"))
+		{
+			return "crypt";
+		}
+		if (!Done.Contains("keeper"))
+		{
+			return "keeper";
 		}
 		return "";
 	}
