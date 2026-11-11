@@ -51,6 +51,7 @@ crystal_id = "crystal_devops"
 position = Vector2(656, 96)
 TargetScene = "res://scenes/world/Dungeon.tscn"
 Spawn = Vector2(656, 624)
+AreaId = 1
 GoDungeon = true
 
 [node name="DemonPortal" parent="." instance=ExtResource("6")]

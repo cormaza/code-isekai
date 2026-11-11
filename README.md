@@ -22,8 +22,8 @@ dotnet --version
 # 1. Compilar C#
 dotnet build
 
-# 2a. Jugar directo (headless / CI smoke)
-godot-mono --headless --path . --quit-after 60
+# 2a. Jugar directo (headless / CI smoke, 30 frames desde el título)
+godot-mono --headless --path . --quit-after 30
 
 # 2b. Abrir editor
 godot-mono --path . --editor
@@ -41,8 +41,10 @@ project.godot          Config (nombre, escena principal, GL Compatibility, filtr
                      acciones move_* con WASD + flechas)
 ProgrammingRpg.csproj  Proyecto C# (Godot.NET.Sdk 4.7.2, net10.0)
 main.tscn              Escena raíz (instancia World + HUD)
+scenes/ui/Title.tscn              Pantalla de título (CODE ISEKAI, Continuar/Nueva partida)
 scenes/world/World.tscn           Mapa (Ground + Walls TileMapLayer, TileSet en runtime)
 scenes/world/Dungeon.tscn         Mazmorra norte (paleta oscura, pilares, otro pool)
+scenes/world/Tower.tscn           Torre del Stack (paleta azulada, pilares propios, golems)
 scenes/party/Ally.tscn            Aliado seguidor (Tux/Ada/Grace, fila india por trail)
 scenes/party/Portal.tscn          Portal overworld ↔ mazmorra (spawn + InDungeon)
 scenes/player/Player.tscn  Heroe CharacterBody2D 4 direcciones + Camera2D
@@ -53,8 +55,11 @@ src/Main.cs            Script raiz / futuro GameManager
 src/World.cs           TileSet + mapa 40x23 + trail de la party + encuentros (overworld/mazmorra)
 src/Player.cs          Movimiento d-pad + J (cambia job) + tinta por job
 src/GameState.cs       Stats + 4 jobs, desbloqueos, encuentro actual, gracia,
-                     tabla de enemigos (slime/nullrat/wraith/wraithlord/demonking),
-                     niveles 1-3, flags de boss/Rey Demonio, ResetRun
+                     tabla de enemigos (slime/nullrat/wraith/golem/wraithlord/demonking),
+                     AreaId (0 overworld, 1 mazmorra, 2 torre), niveles 1-3,
+                     flags de boss/Rey Demonio, ResetRun
+src/SaveGame.cs        Guardado en disco (user://code_isekai_save.json): Write/Read/Has/Wipe
+src/Title.cs           Lógica del título (continuar según AreaId, nueva partida)
 src/Crystal.cs         Lógica del cristal (toast vía grupo "toast")
 src/SlimeBug.cs        Slime fijo del norte + boss de la mazmorra (EnemyId) al tocar al Player
 src/Portal.cs          Portal overworld ↔ mazmorra + DemonPortal (batalla final, sellado con boss)
@@ -67,6 +72,7 @@ tests/EncounterSmoke.cs Smoke headless: encuentro fijo, pelea y vuelta al mapa
 tests/RandomEncounterSmoke.cs Smoke: batalla vs NullRat + encuentro salvaje en pasto
 tests/JobsSmoke.cs     Smoke: Fireball, cristal frontend, ciclo con J
 tests/PartySmoke.cs    Smoke: wraith directo, formación en fila india, ida y vuelta a la mazmorra
+tests/SaveSmoke.cs     Smoke: save/load (Lv2 + backend + AreaId 1 + spawn) y carga de la torre
 tests/PuzzleSmoke.cs   Smoke: reto correcto premia (25-35) e incorrecto castiga (contraataque)
 tests/BossSmoke.cs     Smoke: boss de la mazmorra, Rey Demonio y nueva partida
 icon.svg               Ícono del proyecto
@@ -94,6 +100,13 @@ godot-mono --headless --path . --script res://tests/PuzzleSmoke.cs
 # SMOKE PASS: puzzle premia y castiga. (exit 0)
 ```
 
+## Verificar guardado + torre (headless)
+
+```bash
+godot-mono --headless --path . --script res://tests/SaveSmoke.cs
+# SMOKE PASS: save/load + torre. (exit 0)
+```
+
 ## Concepto corto
 
 - **Fantasía:** dev moderno cae en mundo mágico; la "magia" son sus skills de ingeniería.
@@ -114,7 +127,19 @@ godot-mono --headless --path . --script res://tests/PuzzleSmoke.cs
   teclado y con Enter; correcta = 25-35 de daño ("¡conocimiento aplicado!");
   incorrecta = el bug contraataca y el turno pasa al enemigo.
 - **Rey Demonio:** jefe final = Legacy Monolith / outage total.
+- **Título:** la escena principal es `scenes/ui/Title.tscn` (CODE ISEKAI):
+  ▶ Continuar solo si hay save (viaja al mapa del área guardada) y
+  ✦ Nueva partida (borra el save + ResetRun). Foco inicial en el botón visible.
+- **Autoguardado:** al entrar a cada mapa, `World` guarda área + posición del
+  player (nivel, XP, HP, jobs, cristales, flags, TotalWildWins). Incluye todo
+  lo necesario para continuar donde estabas.
+- **Torre del Stack (área 2):** portal en la mazmorra (1008, 624) →
+  `scenes/world/Tower.tscn` (spawn 656, 624); salida (656, 560) → mazmorra
+  (spawn 1008, 560). Paleta azulada, 11 pilares, pool propio:
+  50% Stack Golem (60 HP, atk 10-14, 40 XP) / 30% Legacy Wraith / 20% Wraithlord,
+  cada 48px al 28%.
+- **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> Próximo paso sugerido: guardado en disco + contenido extra (segunda área, más puzzles).
+> Próximo paso sugerido: más contenido y pulido (segunda quest, sprites propios).
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.

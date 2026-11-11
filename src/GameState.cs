@@ -88,6 +88,11 @@ public static class GameState
 			Name = "Rey Demonio", MaxHp = 180, AtkMin = 15, AtkMax = 22, Xp = 250,
 			Tint = new Color(0.15f, 0.05f, 0.25f), Scale = 1.6f,
 		},
+	["golem"] = new EnemyDef
+		{
+			Name = "Stack Golem", MaxHp = 60, AtkMin = 10, AtkMax = 14, Xp = 40,
+			Tint = new Color(0.45f, 0.50f, 0.60f), Scale = 1.25f,
+		},
 	};
 
 	// Party: el player + 3 aliados con jobs fijos.
@@ -130,6 +135,7 @@ public static class GameState
 	// Viajes: spawn al cambiar de escena, flag de mazmorra, gracia y wins.
 	public static Vector2? SpawnPoint;
 	public static bool InDungeon = false;
+	public static int AreaId = 0;
 	public static int CalmSteps = 60;
 	public static int TotalWildWins = 0;
 
@@ -250,6 +256,7 @@ public static class GameState
 		EncounterKind = "wild";
 		SpawnPoint = null;
 		InDungeon = false;
+		AreaId = 0;
 		CalmSteps = 60;
 		TotalWildWins = 0;
 	}

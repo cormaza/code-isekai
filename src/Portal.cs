@@ -18,6 +18,9 @@ public partial class Portal : Area2D
 	public bool GoDungeon = true;
 
 	[Export]
+	public int AreaId = 1;
+
+	[Export]
 	public bool BattleInstead = false;
 
 	[Export]
@@ -50,7 +53,8 @@ public partial class Portal : Area2D
 			GetTree().CallDeferred(SceneTree.MethodName.ChangeSceneToFile, "res://scenes/battle/Battle.tscn");
 			return;
 		}
-		GameState.InDungeon = GoDungeon;
+		GameState.AreaId = AreaId;
+		GameState.InDungeon = AreaId > 0;
 		GameState.SpawnPoint = Spawn;
 		GameState.CalmSteps = 120;
 		GetTree().CallDeferred(SceneTree.MethodName.ChangeSceneToFile, TargetScene);

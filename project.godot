@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Code Isekai"
 config/description="RPG para developers de software en un isekai de magia y fantasia. Retos de desarrollo suben skills, caracteristicas y niveles para derrotar al Rey Demonio. Estilo Final Fantasy V (SNES)."
-run/main_scene="res://main.tscn"
+run/main_scene="res://scenes/ui/Title.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 boot_splash/bg_color=Color(0.09, 0.09, 0.14, 1)
 

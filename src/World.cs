@@ -4,8 +4,9 @@ using System.Collections.Generic;
 /// <summary>
 /// Mapa top-down: dos TileMapLayer (Ground sin colisión, Walls con
 /// colisión) sobre un TileSet generado en runtime — 3 tiles de 32px.
-/// Overworld: pasto + caminos de tierra + bosques + puerta del Rey Demonio.
-/// Mazmorra (GameState.InDungeon): paleta oscura, sin caminos, pilares.
+/// Overworld (AreaId 0): pasto + caminos de tierra + bosques + puerta del Rey Demonio.
+/// Mazmorra (AreaId 1): paleta oscura, sin caminos, pilares.
+/// Torre del Stack (AreaId 2): paleta azulada, sin caminos, pilares propios.
 /// Registra el trail del Player para que los Ally lo sigan en fila india.
 /// </summary>
 public partial class World : Node2D
@@ -19,11 +20,13 @@ public partial class World : Node2D
 	static readonly Vector2I WallCell = new(2, 0);
 
 	// Encuentros aleatorios sobre pasto (los caminos de tierra son seguros).
-	// Overworld: cada 64px, 15%. Mazmorra: cada 48px, 25%.
+	// Overworld: cada 64px, 15%. Mazmorra: cada 48px, 25%. Torre: cada 48px, 28%.
 	const float RollEveryPx = 64.0f;
 	const float EncounterChance = 0.15f;
 	const float DungeonRollEveryPx = 48.0f;
 	const float DungeonEncounterChance = 0.25f;
+	const float TowerRollEveryPx = 48.0f;
+	const float TowerEncounterChance = 0.28f;
 
 	// Trail del líder: índice 0 = posición más nueva. Los aliados leen
 	// GetTrailPoint(i) → (i+1)*14 ≈ 112px de separación en fila india.
@@ -46,8 +49,12 @@ public partial class World : Node2D
 
 	public override void _Ready()
 	{
-		bool dungeon = GameState.InDungeon;
-		var tileSet = BuildTileSet(dungeon);
+		// AreaId manda; InDungeon queda como reflejo (los smokes lo assertean).
+		GameState.InDungeon = GameState.AreaId > 0;
+		int area = GameState.AreaId;
+		bool dungeon = area > 0;
+		bool tower = area == 2;
+		var tileSet = BuildTileSet(dungeon, tower);
 		var ground = GetNode<TileMapLayer>("Ground");
 		var walls = GetNode<TileMapLayer>("Walls");
 		ground.TileSet = tileSet;
@@ -55,7 +62,7 @@ public partial class World : Node2D
 
 		int sourceId = tileSet.GetSourceId(0);
 		PaintGround(ground, sourceId, dungeon);
-		PaintWalls(walls, sourceId, dungeon);
+		PaintWalls(walls, sourceId, dungeon, tower);
 		if (GameState.SlimeDefeated)
 		{
 			GetNodeOrNull("SlimeBug")?.QueueFree();
@@ -76,10 +83,16 @@ public partial class World : Node2D
 				_trail.Add(_player.Position + new Vector2(-8.0f * k, 0.0f));
 			}
 		}
-		GD.Print($"Mundo listo ({(dungeon ? "mazmorra" : "overworld")}): {MapWidth}x{MapHeight} tiles de {TileSize}px.");
+		string areaName = tower ? "torre" : (dungeon ? "mazmorra" : "overworld");
+		GD.Print($"Mundo listo ({areaName}): {MapWidth}x{MapHeight} tiles de {TileSize}px.");
+		// Autoguardado al entrar a cada mapa (área + posición del player).
+		if (_player != null)
+		{
+			SaveGame.Write(area, _player.Position);
+		}
 	}
 
-	static TileSet BuildTileSet(bool dungeon)
+	static TileSet BuildTileSet(bool dungeon, bool tower = false)
 	{
 		var tileSet = new TileSet
 		{
@@ -92,7 +105,7 @@ public partial class World : Node2D
 
 		var atlas = new TileSetAtlasSource
 		{
-			Texture = MakeTilesTexture(dungeon),
+			Texture = MakeTilesTexture(dungeon, tower),
 			TextureRegionSize = new Vector2I(TileSize, TileSize),
 		};
 		atlas.CreateTile(GrassCell);
@@ -114,10 +127,16 @@ public partial class World : Node2D
 		return tileSet;
 	}
 
-	static ImageTexture MakeTilesTexture(bool dungeon)
+	static ImageTexture MakeTilesTexture(bool dungeon, bool tower = false)
 	{
 		var img = Image.Create(TileSize * 3, TileSize, false, Image.Format.Rgb8);
-		if (dungeon)
+		if (tower)
+		{
+			PaintTile(img, 0, new Color(0.10f, 0.12f, 0.25f)); // piso torre
+			PaintTile(img, 1, new Color(0.08f, 0.10f, 0.20f)); // tierra (sin uso)
+			PaintTile(img, 2, new Color(0.05f, 0.06f, 0.12f)); // muro torre
+		}
+		else if (dungeon)
 		{
 			PaintTile(img, 0, new Color(0.13f, 0.13f, 0.22f)); // piso mazmorra
 			PaintTile(img, 1, new Color(0.10f, 0.10f, 0.18f)); // tierra (sin uso)
@@ -174,7 +193,7 @@ public partial class World : Node2D
 		}
 	}
 
-	static void PaintWalls(TileMapLayer walls, int sourceId, bool dungeon)
+	static void PaintWalls(TileMapLayer walls, int sourceId, bool dungeon, bool tower = false)
 	{
 		// Anillo borde del mapa.
 		for (int x = 0; x < MapWidth; x++)
@@ -188,6 +207,22 @@ public partial class World : Node2D
 			walls.SetCell(new Vector2I(MapWidth - 1, y), sourceId, WallCell);
 		}
 
+		if (tower)
+		{
+			// Torre del Stack: pilares propios (corredores col 19-20, fila 11,
+			// spawn (656,624) y salida libres). Sin puerta del Rey Demonio.
+		Vector2I[] pillars =
+			{
+				new(5, 4), new(11, 6), new(26, 4), new(31, 6), new(8, 13),
+				new(14, 17), new(26, 14), new(33, 16), new(5, 18),
+				new(17, 10), new(22, 16),
+			};
+			foreach (Vector2I cell in pillars)
+			{
+				walls.SetCell(cell, sourceId, WallCell);
+			}
+			return;
+		}
 		if (dungeon)
 		{
 			// Pilares sueltos (1 celda) + anillo. Sin puerta del Rey Demonio.
@@ -249,8 +284,13 @@ public partial class World : Node2D
 			GameState.CalmSteps -= (int)moved;
 			return;
 		}
-		float rollEvery = GameState.InDungeon ? DungeonRollEveryPx : RollEveryPx;
-		float chance = GameState.InDungeon ? DungeonEncounterChance : EncounterChance;
+		float rollEvery = GameState.AreaId == 0 ? RollEveryPx : DungeonRollEveryPx;
+		float chance = GameState.AreaId switch
+		{
+			2 => TowerEncounterChance,
+			1 => DungeonEncounterChance,
+			_ => EncounterChance,
+		};
 		_sinceRoll += moved;
 		while (_sinceRoll >= rollEvery)
 		{
@@ -272,7 +312,13 @@ public partial class World : Node2D
 
 	void TriggerWild()
 	{
-		if (GameState.InDungeon)
+		if (GameState.AreaId == 2)
+		{
+			// Torre: 50% Stack Golem, 30% Legacy Wraith, 20% Wraithlord.
+			float r = GD.Randf();
+			GameState.SelectedEnemy = r < 0.5f ? "golem" : (r < 0.8f ? "wraith" : "wraithlord");
+		}
+		else if (GameState.InDungeon)
 		{
 			// Mazmorra: 40% NullRat, 25% Slime-Bug salvaje, 35% Legacy Wraith.
 			float r = GD.Randf();

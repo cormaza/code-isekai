@@ -26,6 +26,7 @@ public partial class Battle : Control
 
 	const string MainScene = "res://main.tscn";
 	const string DungeonScene = "res://scenes/world/Dungeon.tscn";
+	const string TowerScene = "res://scenes/world/Tower.tscn";
 	const string BattleScene = "res://scenes/battle/Battle.tscn";
 	const int AbilityUsesPerBattle = 2;
 	const int PuzzleUsesPerBattle = 1;
@@ -37,6 +38,9 @@ public partial class Battle : Control
 		["http"] = ("¿Qué código HTTP devuelve un GET exitoso? (solo el número)", "200"),
 		["strictnull"] = ("¿Qué devuelve null === undefined en JS? (true/false)", "false"),
 		["sql"] = ("¿Qué cláusula filtra filas ANTES de agrupar? (where/having)", "where"),
+		["recursion"] = ("¿Qué necesita toda función recursiva para terminar? (dos palabras)", "caso base"),
+		["bigo"] = ("Acceso por índice en un array: ¿complejidad? (ej: O(1))", "o(1)"),
+		["push"] = ("¿Qué comando sube tu rama al remoto? (una palabra)", "push"),
 	};
 
 	public string PuzzleId { get; private set; } = "";
@@ -538,8 +542,13 @@ public partial class Battle : Control
 	async void ReturnToMap(double delaySeconds)
 	{
 		await ToSignal(GetTree().CreateTimer(delaySeconds), SceneTreeTimer.SignalName.Timeout);
-		// Se vuelve al mapa de origen: la mazmorra no te escupe al overworld.
-		GetTree().ChangeSceneToFile(GameState.InDungeon ? DungeonScene : MainScene);
+		// Se vuelve al mapa de origen según el área.
+		GetTree().ChangeSceneToFile(GameState.AreaId switch
+		{
+			1 => DungeonScene,
+			2 => TowerScene,
+			_ => MainScene,
+		});
 	}
 
 	void ToggleJobPanel()

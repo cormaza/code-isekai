@@ -10,10 +10,15 @@ que se tragó a los héroes anteriores.
 - Overworld: cada 64px sobre pasto, 15% de encuentro (65% NullRat / 35% Slime salvaje).
 - Mazmorra: sin caminos (todo el piso es pasto), cada 48px, 25% de encuentro
   (40% NullRat / 25% Slime salvaje / 35% Legacy Wraith).
+- Torre del Stack: sin caminos, cada 48px, 28% de encuentro
+  (50% Stack Golem / 30% Legacy Wraith / 20% Wraithlord).
 - 120px de gracia tras cada batalla (huida, victoria o portal); 60px al cargar el mapa.
-- Constantes en `World.cs` (RollEveryPx/EncounterChance + variantes Dungeon) y tabla de
+- Constantes en `World.cs` (RollEveryPx/EncounterChance + variantes Dungeon/Tower) y tabla de
   enemigos en `GameState.cs` (dict Enemies: slime 30 HP, nullrat 22 HP,
-  wraith 44 HP, wraithlord 130 HP atk 12-18 XP 100, demonking 180 HP atk 15-22 XP 250).
+  wraith 44 HP, golem 60 HP atk 10-14 XP 40, wraithlord 130 HP atk 12-18 XP 100,
+  demonking 180 HP atk 15-22 XP 250).
+- Área actual `GameState.AreaId`: 0 overworld, 1 mazmorra, 2 torre.
+  `InDungeon` queda como reflejo (AreaId > 0); los portales setean ambos.
 - Clase de encuentro `EncounterKind`: "wild" (aleatorio), "slime" (fijo),
   "boss" (mazmorra), "demonking" (final). Victoria: slime→SlimeDefeated,
   boss→BossDefeated, wild→TotalWildWins, demonking→flag en Battle + EndPanel.
@@ -35,19 +40,39 @@ que se tragó a los héroes anteriores.
 ## Mazmorra
 - Portal al norte del overworld (656, 96) → `scenes/world/Dungeon.tscn` (spawn 656, 624);
   portal de salida (656, 560) → `main.tscn` (spawn 656, 132). El Portal setea
-  `InDungeon`, `SpawnPoint` y `CalmSteps = 120`.
+  `AreaId`, `InDungeon` (= AreaId > 0), `SpawnPoint` y `CalmSteps = 120`.
 - Paleta oscura (piso 0.13/0.13/0.22, muro 0.08/0.08/0.14), sin caminos, pilares sueltos
   en (5,4), (11,6), (26,4), (31,6), (8,13), (14,17), (26,14), (33,16), (5,18)
   (sin puerta del Rey Demonio) + anillo de muros.
 - Enemigo propio: Legacy Wraith (44 HP, atk 8-13, 30 XP, tint 0.7/0.2/0.3, escala 1.1).
+
+## Torre del Stack (segunda área)
+- Portal en la mazmorra (1008, 624) → `scenes/world/Tower.tscn` (spawn 656, 624);
+  portal de salida (656, 560) → mazmorra (spawn 1008, 560, pisable: col 31 fila 17 libre).
+- Paleta azulada (piso 0.10/0.12/0.25, muro 0.05/0.06/0.12), sin caminos, 11 pilares
+  en (5,4), (11,6), (26,4), (31,6), (8,13), (14,17), (26,14), (33,16), (5,18),
+  (17,10), (22,16) (corredores col 19-20, fila 11, spawn y salida libres).
+- Enemigo propio: Stack Golem (60 HP, atk 10-14, 40 XP, tint 0.45/0.5/0.6, escala 1.25).
+
+## Guardado + título
+- Scena principal: `scenes/ui/Title.tscn` (CODE ISEKAI + subtítulo):
+  ▶ Continuar visible solo si hay save (viaja al mapa del área guardada) y
+  ✦ Nueva partida (borra el save + ResetRun → overworld). Foco diferido al visible.
+- `src/SaveGame.cs` (static, `user://code_isekai_save.json`): Write guarda
+  nivel, XP, HP del player, HP de aliados, jobs, cristales, flags
+  (slime/boss/demon), job actual, área, posición y TotalWildWins;
+  Read restaura todo (SpawnPoint, InDungeon = área > 0, AreaId) o devuelve
+  false sin tocar el estado si no hay archivo o el JSON es inválido; Wipe borra.
+- Autoguardado: `World._Ready` escribe área + posición del player al entrar
+  a cada mapa. Smoke `tests/SaveSmoke.cs`: save/load + carga de la torre.
 
 ## Reto de código (comando Reto)
 - Botón 🧩 Reto en el menú (entre Job y Huir): abre un panel centrado con una
   pregunta al azar de la tabla `Battle.Puzzles`, deshabilita el menú y da foco
   al campo de respuesta. Cerrar no consume el uso.
 - Tabla (pregunta → respuesta): offbyone → 4; loop → 2; http → 200;
-  strictnull → false; sql → where. La comparación normaliza con
-  StripEdges().ToLower().
+  strictnull → false; sql → where; recursion → caso base; bigo → o(1);
+  push → push. La comparación normaliza con StripEdges().ToLower().
 - 1 uso por batalla (`PuzzleUsesLeft`): correcta = 25-35 de daño por la vía de
   DoOffense ("¡conocimiento aplicado!"); incorrecta = mensaje
   "¡Respuesta incorrecta! El bug contraataca…" y el turno pasa al enemigo
@@ -93,4 +118,7 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
    (comando Reto: 5 puzzles, 1 uso, Enter para responder).
 7. ~~Boss de la mazmorra y camino al Rey Demonio.~~ Hecho (Wraithlord 130 HP,
    portal sellado, Rey Demonio 180 HP con final + nueva partida, nivel 3).
-8. Guardado en disco + contenido extra (segunda área, más puzzles).
+8. ~~Guardado en disco + contenido extra (segunda área, más puzzles).~~ Hecho
+   (título con continuar/nueva partida, autoguardado al entrar a mapas,
+   Torre del Stack + Stack Golem, 3 puzzles nuevos, 8 smokes).
+9. Más contenido y pulido (segunda quest, sprites propios).

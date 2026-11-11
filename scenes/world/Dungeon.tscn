@@ -32,7 +32,15 @@ JobIndex = 2
 position = Vector2(656, 560)
 TargetScene = "res://main.tscn"
 Spawn = Vector2(656, 132)
+AreaId = 0
 GoDungeon = false
+
+[node name="TowerPortal" parent="." instance=ExtResource("4")]
+position = Vector2(1008, 624)
+TargetScene = "res://scenes/world/Tower.tscn"
+Spawn = Vector2(656, 624)
+AreaId = 2
+GoDungeon = true
 
 [node name="Boss" parent="." instance=ExtResource("5")]
 position = Vector2(656, 176)
