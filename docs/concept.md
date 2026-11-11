@@ -80,6 +80,36 @@ que se tragó a los héroes anteriores.
 - Se responde escribiendo + Enter (`text_submitted`) o con el botón
   "Responder (Enter)".
 
+## Side-quests (Senior Dev)
+- NPC Mentor en el overworld (560, 368, camino de tierra seguro): ofrece
+  2 quests encadenadas con la tecla E (acción "interact"). Primera E abre
+  la oferta en el DialogPanel del HUD; segunda E acepta (toast
+  "¡Quest aceptada: {título}!"), cierra y actualiza el tracker.
+- Tracker: "📜 {título}: {progreso}/{necesario} {objetivo}" con quest
+  activa; "📜 Hablá con el Senior Dev (oeste del spawn)" sin quest;
+  "📜 Todo hecho. ¡Al Rey Demonio!" al completar todo.
+- Quests (`src/QuestLog.cs`, resetea con `GameState.ResetRun`): rats
+  ("Plaga de NullRats": 3 nullrats, +40 XP) → boss ("El Wraithlord":
+  1 wraithlord, +80 XP). `Battle.DoVictory` reporta el kill y anexa
+  "¡Quest completa: {título} (+{xp} XP)!" (+ level up si hay) al Say.
+  Completar cura full a la party. Tuning: las recompensas (40/80 XP)
+  aceleran el nivel 2-3 antes del Rey Demonio.
+- Smoke `tests/QuestSmoke.cs` (seed 9): doble E → 3×nullrat → doble E →
+  wraithlord → PASS.
+
+## SFX procedurales (sin assets)
+- `src/Sfx.cs`: tonos generados en runtime como AudioStreamWAV 16-bit a
+  22050 Hz (sine con decay (1-t); buzz square con Math.Sign; portal con
+  rampa de fase 200→1200 Hz), cache por nombre, AudioStreamPlayer hijo
+  de Root (se libera en Finished) a -12 dB. Anda con driver Dummy.
+- Tabla: hit [(180,0.08),(90,0.12)]; victory [(523,0.12),(659,0.12),
+  (784,0.2)]; defeat [(392,0.2),(311,0.2),(233,0.35)]; pickup
+  [(880,0.08),(1320,0.15)]; portal (rampa 0.3s); ding [(1046,0.1),
+  (1568,0.18)]; buzz [(140,0.25)] square.
+- Dónde suenan: hit en cada golpe (player/aliados/enemigo), victory en
+  DoVictory, defeat en DoDefeat, ding/buzz en SubmitPuzzleAnswer
+  (correcta/incorrecta), pickup en Crystal, portal en Portal (viaje).
+
 ## Referencia
 Final Fantasy V (SNES): vista top-down, party de 4, jobs por cristales,
 batalla por turnos con ATB simple, mapa + dungeons + jefes.
@@ -121,4 +151,4 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
 8. ~~Guardado en disco + contenido extra (segunda área, más puzzles).~~ Hecho
    (título con continuar/nueva partida, autoguardado al entrar a mapas,
    Torre del Stack + Stack Golem, 3 puzzles nuevos, 8 smokes).
-9. Más contenido y pulido (segunda quest, sprites propios).
+9. Más quests/áreas + sprites propios + balance.

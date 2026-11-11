@@ -57,6 +57,7 @@ public partial class Portal : Area2D
 		GameState.InDungeon = AreaId > 0;
 		GameState.SpawnPoint = Spawn;
 		GameState.CalmSteps = 120;
+		Sfx.Play(this, "portal");
 		GetTree().CallDeferred(SceneTree.MethodName.ChangeSceneToFile, TargetScene);
 	}
 

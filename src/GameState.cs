@@ -196,6 +196,28 @@ public static class GameState
 		return isNew;
 	}
 
+	/// <summary>Suma XP y chequea los umbrales 20→2 y 100→3 una sola vez. Devuelve mensaje de level up o vacío.</summary>
+	public static string AddXp(int amount)
+	{
+		Xp += amount;
+		int newLevel = 1;
+		foreach (var (threshold, level) in LevelThresholds)
+		{
+			if (Xp >= threshold)
+			{
+				newLevel = level;
+			}
+		}
+		if (newLevel > Level)
+		{
+			Level = newLevel;
+			RecomputeStats();
+			HealParty();
+			return $" ¡La party subió a nivel {Level}! (HP restaurado)";
+		}
+		return "";
+	}
+
 	/// <summary>Registra una victoria. Devuelve mensaje extra (level up) o vacío.</summary>
 	public static string RegisterVictory(int xp) => RegisterVictory(xp, EncounterKind);
 
@@ -215,24 +237,9 @@ public static class GameState
 			TotalWildWins++;
 		}
 		// demonking: nada acá, lo marca Battle al mostrar el final.
-		Xp += xp;
+		string extra = AddXp(xp);
 		CalmSteps = 120;
-		int newLevel = 1;
-		foreach (var (threshold, level) in LevelThresholds)
-		{
-			if (Xp >= threshold)
-			{
-				newLevel = level;
-			}
-		}
-		if (newLevel > Level)
-		{
-			Level = newLevel;
-			RecomputeStats();
-			HealParty();
-			return $" ¡La party subió a nivel {Level}! (HP restaurado)";
-		}
-		return "";
+		return extra;
 	}
 
 	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3) };
@@ -259,6 +266,7 @@ public static class GameState
 		AreaId = 0;
 		CalmSteps = 60;
 		TotalWildWins = 0;
+		QuestLog.Reset();
 	}
 
 	static void RecomputeStats()

@@ -264,9 +264,11 @@ public partial class Battle : Control
 		TurnLog.Add("player");
 		if (correct)
 		{
+			Sfx.Play(this, "ding");
 			DoPlayerOffense(25, 35, $"¡conocimiento aplicado! (respuesta: {expected})");
 			return true;
 		}
+		Sfx.Play(this, "buzz");
 		Say("¡Respuesta incorrecta! El bug contraataca…");
 		ContinueAfterPlayer();
 		return false;
@@ -318,6 +320,7 @@ public partial class Battle : Control
 		_enemyHp = Mathf.Max(0, _enemyHp - dmg);
 		RefreshUi();
 		FlashEnemy();
+		Sfx.Play(this, "hit");
 		Say($"¡{_def.Name} recibe {dmg} de daño! ({label})");
 		await ToSignal(GetTree().CreateTimer(0.5), SceneTreeTimer.SignalName.Timeout);
 		if (CurrentPhase == Phase.Over)
@@ -417,6 +420,7 @@ public partial class Battle : Control
 		_enemyHp = Mathf.Max(0, _enemyHp - dmg);
 		RefreshUi();
 		FlashEnemy();
+		Sfx.Play(this, "hit");
 		Say($"¡{name} ({label}) pega {dmg} a {_def.Name}!");
 	}
 
@@ -487,6 +491,7 @@ public partial class Battle : Control
 			GameState.AllyHp[t] = Mathf.Max(0, GameState.AllyHp[t] - dmg);
 			targetName = GameState.AllyNames[t];
 		}
+			Sfx.Play(this, "hit");
 		RefreshUi();
 		if (GameState.AllDead())
 		{
@@ -514,6 +519,8 @@ public partial class Battle : Control
 	{
 		CurrentPhase = Phase.Over;
 		string extra = GameState.RegisterVictory(_def.Xp);
+		extra += QuestLog.OnKill(EnemyId);
+		Sfx.Play(this, "victory");
 		RefreshUi();
 		if (EnemyId == "demonking")
 		{
@@ -534,6 +541,7 @@ public partial class Battle : Control
 	void DoDefeat()
 	{
 		CurrentPhase = Phase.Over;
+		Sfx.Play(this, "defeat");
 		Say("GAME OVER — el legado te absorbió… pero todo deploy tiene rollback.");
 		_retryButton.Visible = true;
 		_retryButton.GrabFocus();

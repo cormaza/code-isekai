@@ -49,6 +49,7 @@ scenes/party/Ally.tscn            Aliado seguidor (Tux/Ada/Grace, fila india por
 scenes/party/Portal.tscn          Portal overworld ↔ mazmorra (spawn + InDungeon)
 scenes/player/Player.tscn  Heroe CharacterBody2D 4 direcciones + Camera2D
 scenes/enemy/SlimeBug.tscn   Slime-Bug salvaje (Area2D que dispara la batalla)
+scenes/npc/Mentor.tscn      Senior Dev (túnica gris + barba) al oeste del spawn (560, 368)
 scenes/battle/Battle.tscn    Pelea por turnos (Atacar/Habilidad/Reto/Job/Huir, HP, XP)
 scenes/pickup/Crystal.tscn  Cristal de job (desbloquea + equipa + cura)
 src/Main.cs            Script raiz / futuro GameManager
@@ -65,7 +66,11 @@ src/SlimeBug.cs        Slime fijo del norte + boss de la mazmorra (EnemyId) al t
 src/Portal.cs          Portal overworld ↔ mazmorra + DemonPortal (batalla final, sellado con boss)
 src/Battle.cs          Turnos de la party vs slime/nullrat/wraith/wraithlord/Rey Demonio,
                      dano, reto de código, huida, victoria/derrota, level up,
-                     final del juego (EndPanel + nueva partida)
+                     final del juego (EndPanel + nueva partida), SFX y progreso de quests
+src/QuestLog.cs        Side-quests del Senior Dev (rats → boss): oferta, aceptada,
+                     progreso por kills, recompensa XP + cura, tracker del HUD
+src/Npc.cs             Senior Dev: primera E abre la oferta, segunda E acepta y cierra
+src/Sfx.cs             Efectos procedurales sin assets (WAV 16-bit a 22050 Hz, Dummy-safe)
 src/World.cs           TileSet + mapa 40x23 + encuentros aleatorios en pasto
 tests/MovementSmoke.cs Smoke headless: camina y verifica choque contra muro
 tests/EncounterSmoke.cs Smoke headless: encuentro fijo, pelea y vuelta al mapa
@@ -75,6 +80,7 @@ tests/PartySmoke.cs    Smoke: wraith directo, formación en fila india, ida y vu
 tests/SaveSmoke.cs     Smoke: save/load (Lv2 + backend + AreaId 1 + spawn) y carga de la torre
 tests/PuzzleSmoke.cs   Smoke: reto correcto premia (25-35) e incorrecto castiga (contraataque)
 tests/BossSmoke.cs     Smoke: boss de la mazmorra, Rey Demonio y nueva partida
+tests/QuestSmoke.cs    Smoke: 2 quests encadenadas + SFX
 icon.svg               Ícono del proyecto
 docs/concept.md        Visión del juego (jobs, batalla, progresión)
 ```
@@ -107,6 +113,13 @@ godot-mono --headless --path . --script res://tests/SaveSmoke.cs
 # SMOKE PASS: save/load + torre. (exit 0)
 ```
 
+## Verificar quests + SFX (headless)
+
+```bash
+godot-mono --headless --path . --script res://tests/QuestSmoke.cs
+# SMOKE PASS: quests + sfx. (exit 0)
+```
+
 ## Concepto corto
 
 - **Fantasía:** dev moderno cae en mundo mágico; la "magia" son sus skills de ingeniería.
@@ -118,6 +131,19 @@ godot-mono --headless --path . --script res://tests/SaveSmoke.cs
 - **Portal sellado:** el DemonPortal del overworld (752, 96) exige al Wraithlord
   derrotado; si no, avisa "Sellado: el Wraithlord de la mazmorra lo protege…"
   y no viaja.
+- **Side-quests (Senior Dev):** NPC al oeste del spawn (560, 368, camino
+  seguro). Acercate (<56px) y pulsá **E**: la primera E muestra la oferta,
+  la segunda la acepta (toast + tracker). Tracker del HUD:
+  "📜 {quest}: {progreso}/{necesario} {objetivo}". 2 quests encadenadas:
+  **Plaga de NullRats** (cazar 3 nullrats, +40 XP) → **El Wraithlord**
+  (bajar 1 wraithlord, +80 XP); cada quest completa cura full a la party.
+  Sin oferta muestra el estado (quest activa o "Todo hecho. ¡Al Rey Demonio!").
+- **SFX procedurales (sin assets):** `src/Sfx.cs` genera WAV 16-bit a
+  22050 Hz en runtime (sine con decay; buzz square; portal con rampa
+  200→1200 Hz), a -12 dB, hijo de Root que se libera al terminar.
+  Funciona con driver Dummy (headless sin errores). Suenan en:
+  hit (cada golpe en batalla), victory / defeat, ding (reto correcto) /
+  buzz (reto incorrecto), pickup (cristal) y portal (viaje).
 - **Rey Demonio:** jefe final = Rey Demonio (180 HP, atk 15-22, 250 XP).
   Vencerlo muestra "¡REY DEMONIO DERROTADO!" (nivel y XP) con
   ↻ Nueva partida (ResetRun: todo a inicial). Huir del Rey Demonio se permite.
@@ -140,6 +166,6 @@ godot-mono --headless --path . --script res://tests/SaveSmoke.cs
   cada 48px al 28%.
 - **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> Próximo paso sugerido: más contenido y pulido (segunda quest, sprites propios).
+> Próximo paso sugerido: más quests/áreas + sprites propios + balance.
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.

@@ -51,6 +51,7 @@ public partial class Crystal : Area2D
 		GameState.CollectedCrystals.Add(CrystalId);
 		GameState.UnlockJob(JobId);
 		GameState.CalmSteps = 120;
+		Sfx.Play(this, "pickup");
 		Toast($"¡Cristal {JobId}! Job desbloqueado: {GameState.Jobs[JobId].Name} (J: cambiar)");
 		QueueFree();
 	}
