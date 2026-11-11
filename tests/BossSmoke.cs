@@ -1,13 +1,15 @@
 using Godot;
+using System.Linq;
 
 /// <summary>
 /// Smoke del cierre del juego en dos fases:
-/// A. Batalla directa vs wraithlord (Wraithlord Legacy, 130 HP, 100 XP):
+/// A. Batalla directa vs wraithlord (Wraithlord Legacy, 160 HP, 100 XP):
 ///    pelea con ChooseAttack en turnos Player (+ UseAbility si hay usos)
 ///    hasta la victoria; verifica BossDefeated y vuelta a Main.
 /// B. Desbloquea backend/devops/frontend + RegisterVictory(100, "wild") x2
-///    (→ Lv3); batalla directa vs demonking (Rey Demonio, 180 HP, 250 XP):
-///    pelea hasta la victoria; verifica DemonKingDefeated y EndPanel
+///    (→ Lv4 con el umbral 250); batalla directa vs demonking (Rey Demonio, 240 HP, 250 XP):
+///    pelea hasta la victoria; verifica DemonKingDefeated, al menos 3 turnos
+///    "player" en el TurnLog (el final no es trivial) y EndPanel
 ///    visible; llama OnPlayAgainPressed y verifica Main con XP==0,
 ///    Level==1, solo freelancer y !SlimeDefeated → PASS.
 /// Si la party pierde alguna pelea → FAIL honesto.
@@ -66,6 +68,14 @@ public partial class BossSmoke : SceneTree
 				if (_stage == Stage.DemonBattle && !_demonReady)
 				{
 					_demonReady = true;
+					int playerTurns = battle.TurnLog.Count(t => t == "player");
+					GD.Print($"SMOKE: Rey Demonio derrotado en {playerTurns} turnos player.");
+					if (playerTurns < 3)
+					{
+						GD.Print("SMOKE FAIL: el final cayó en menos de 3 turnos player (trivial).");
+						Quit(1);
+						return true;
+					}
 					var end = battle.GetNodeOrNull<Control>("EndPanel");
 					GD.Print($"SMOKE: Rey Demonio derrotado, EndPanel visible={end?.Visible}. Nueva partida...");
 					if (end == null || !end.Visible)
@@ -116,9 +126,9 @@ public partial class BossSmoke : SceneTree
 				GameState.RegisterVictory(100, "wild");
 				GameState.RegisterVictory(100, "wild");
 				GD.Print($"SMOKE: fase B lista (nivel={GameState.Level}, XP={GameState.Xp}). Peleando vs Rey Demonio...");
-				if (GameState.Level != 3)
+				if (GameState.Level != 4)
 				{
-					GD.Print($"SMOKE FAIL: nivel {GameState.Level} != 3 antes del Rey Demonio.");
+					GD.Print($"SMOKE FAIL: nivel {GameState.Level} != 4 antes del Rey Demonio.");
 					Quit(1);
 					return true;
 				}

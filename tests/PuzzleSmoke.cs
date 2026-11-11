@@ -3,9 +3,9 @@ using System.Linq;
 
 /// <summary>
 /// Smoke del comando Reto en dos fases:
-/// A. Batalla directa vs slime (30 HP): en turno Player abre el reto con
+/// A. Batalla directa vs slime (36 HP): en turno Player abre el reto con
 ///    OpenPuzzle(), responde bien con Battle.Puzzles[id].Answer y verifica
-///    true, daño 25-35 (EnemyHpLeft &lt;= 5; si fue one-shot la victoria
+///    true, daño 25-35 (EnemyHpLeft &lt;= 11; si fue one-shot la victoria
 ///    inmediata se tolera) y PuzzleUsesLeft == 0. Si sigue en batalla,
 ///    ChooseAttack hasta la victoria → Main, con XP relativo +20.
 /// B. Batalla directa vs nullrat con los aliados caídos (para que el
@@ -130,7 +130,7 @@ public partial class PuzzleSmoke : SceneTree
 				Quit(1);
 				return;
 			}
-			if (battle.EnemyHpLeft > 30 - 25)
+			if (battle.EnemyHpLeft > 36 - 25)
 			{
 				GD.Print("SMOKE FAIL: el reto correcto pegó menos de 25.");
 				Quit(1);

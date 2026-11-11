@@ -57,16 +57,16 @@ src/World.cs           TileSet + mapa 40x23 + trail de la party + encuentros (ov
 src/Player.cs          Movimiento d-pad + J (cambia job) + tinta por job + caminata 2 frames (0.18s/paso)
 src/GameState.cs       Stats + 4 jobs, desbloqueos, encuentro actual, gracia,
                      tabla de enemigos (slime/nullrat/wraith/golem/wraithlord/demonking),
-                     AreaId (0 overworld, 1 mazmorra, 2 torre), niveles 1-3,
+                     AreaId (0 overworld, 1 mazmorra, 2 torre), niveles 1-4,
                      flags de boss/Rey Demonio, ResetRun
 src/SaveGame.cs        Guardado en disco (user://code_isekai_save.json): Write/Read/Has/Wipe (incluye quests: active_id, progress, done)
-src/Title.cs           Lógica del título (continuar según AreaId, nueva partida)
+src/Title.cs           Lógica del título (continuar según AreaId, nueva partida, música title_loop)
 src/Crystal.cs         Lógica del cristal (toast vía grupo "toast")
 src/SlimeBug.cs        Slime fijo del norte + boss de la mazmorra (EnemyId) al tocar al Player + squash-and-stretch
 src/Portal.cs          Portal overworld ↔ mazmorra + DemonPortal (batalla final, sellado con boss)
 src/Battle.cs          Turnos de la party vs slime/nullrat/wraith/wraithlord/Rey Demonio,
                      dano, reto de código, huida, victoria/derrota, level up,
-                     final del juego (EndPanel + nueva partida), SFX y progreso de quests,
+                     final del juego (EndPanel + nueva partida), SFX, música battle_loop/victory,
                      lunge de ataque (tween X 36px) + bob idle (solo Y)
 src/QuestLog.cs        Side-quests del Senior Dev (rats → boss → golems → demonking): oferta, aceptada,
                      progreso por kills, recompensa XP + cura, tracker del HUD
@@ -85,6 +85,9 @@ tests/BossSmoke.cs     Smoke: boss de la mazmorra, Rey Demonio y nueva partida
 tests/QuestSmoke.cs    Smoke: 2 quests encadenadas + SFX
 tests/QuestSaveSmoke.cs Smoke: 4 quests + persistencia en save (golems a medias → ResetRun → Read → cadena completa)
 tests/AnimSmoke.cs     Smoke: caminar anima 2 frames (Player.StepIndex + Ally0.StepIndex)
+tests/AudioSmoke.cs    Smoke: música real en título y batalla + 1 ataque sin ERROR
+tools/make_audio.py    Generador chiptune (solo stdlib): battle/title/victory WAVs 22050 Hz mono 16-bit
+assets/audio/          battle_loop.wav (24s) + title_loop.wav (16s) + victory.wav (3s)
 icon.svg               Ícono del proyecto
 docs/concept.md        Visión del juego (jobs, batalla, progresión)
 ```
@@ -129,8 +132,8 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
 - **Fantasía:** dev moderno cae en mundo mágico; la "magia" son sus skills de ingeniería.
 - **Progresión FF5:** jobs (Frontend Knight, Backend Mage, DevOps Alchemist…), cristales que desbloquean roles, party de 4 (Tux/Ada/Grace con IA simple).
 - **Retos = combate:** bugs, deploys, refactors e incidentes son encuentros; resolverlos da XP y loot.
-- **Mazmorra norte:** portal al norte del mapa, paleta oscura y el Legacy Wraith (44 HP, 30 XP) además de NullRat/Slime.
-- **Boss de la mazmorra:** el Wraithlord Legacy (130 HP, atk 12-18, 100 XP) espera
+- **Mazmorra norte:** portal al norte del mapa, paleta oscura y el Legacy Wraith (55 HP, 30 XP) además de NullRat/Slime.
+- **Boss de la mazmorra:** el Wraithlord Legacy (160 HP, atk 14-20, 100 XP) espera
   al fondo (656, 176). Vencerlo desbloquea el portal del Rey Demonio.
 - **Portal sellado:** el DemonPortal del overworld (752, 96) exige al Wraithlord
   derrotado; si no, avisa "Sellado: el Wraithlord de la mazmorra lo protege…"
@@ -156,7 +159,31 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   Funciona con driver Dummy (headless sin errores). Suenan en:
   hit (cada golpe en batalla), victory / defeat, ding (reto correcto) /
   buzz (reto incorrecto), pickup (cristal) y portal (viaje).
-- **Animaciones (sin assets):** caminata en 2 frames (`PixelArt.Hero(tint, step)`: step=false piernas
+- **Balance (modelo de rondas):** salvajes 2-3 rondas, mazmorra 3-4, boss 4-5, final 4-6 (la party pega fuerte; el desafío está en el daño recibido y los usos limitados).
+  | Enemigo | HP | ATK | XP |
+  |---|---|---|---|
+  | NullRat | 26 | 6-9 | 12 |
+  | Slime-Bug | 36 | 7-11 | 20 |
+  | Legacy Wraith | 55 | 9-14 | 30 |
+  | Stack Golem | 75 | 12-16 | 40 |
+  | Wraithlord Legacy | 160 | 14-20 | 100 |
+  | Rey Demonio | 300 | 18-25 | 250 |
+  Nivel 4 en 250 XP; fórmulas genéricas (Level-1)*10 HP y (Level-1)*2 ATK
+  ya escalan (Lv4 = 80 HP/18 ATK base). Tuning: la party de 4 pega ~60-70
+  por ronda a Lv1, por eso los HP subieron (slime 30→36, wraithlord 130→160,
+  demonking 180→300) y el ATK enemigo amenaza sin one-shotear (máx 25
+  vs ~340 HP de party a Lv4, con Hotfix de Grace para emergencias).
+- **Música real (WAVs chiptune generados):** `tools/make_audio.py` (solo stdlib:
+  wave+struct+math) genera 22050 Hz mono 16-bit: `battle_loop.wav` (24 s,
+  La menor, bajo en 8vos + lead cuadrado, 4 compases en loop perfecto),
+  `title_loop.wav` (16 s, arpegios Am-F-C-G suaves) y `victory.wav` (3 s,
+  fanfarria C-E-G-C + acorde). `Title` loopea title_loop y `Battle`
+  battle_loop (LoopMode Forward, puntos 0..fin) a -18 dB desde `_Ready`
+  (SFX intactos a -12 dB); al terminar frena el loop y suena victory.wav
+  (victoria) o nada extra (derrota, ya tiene el buzz de Sfx). Carga directa
+  del archivo sin importador (MusicUtil en `src/Title.cs`): anda con driver
+  Dummy. Regenerar: `python3 tools/make_audio.py`.
+- **Animaciones (sin assets de imagen):** caminata en 2 frames (`PixelArt.Hero(tint, step)`: step=false piernas
   separadas, step=true juntas bajo el cuerpo; `Player`/`Ally` cachean ambas texturas al cambiar de job
   y alternan `StepIndex` cada 0.18s en movimiento, frame A quietos; sin generar texturas por frame).
   Squash-and-stretch del slime (`SlimeBug._Process`: escala X/Y opuesta con sin, solo visual,
@@ -164,10 +191,10 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   0.09s ida + 0.09s vuelta, disparado sin await para no alargar turnos, en paralelo al flash)
   y bob idle (enemigo ±3px, party ±1.5px con fases distintas, solo Y para no pelear con el lunge).
   Smoke `tests/AnimSmoke.cs` (seed 6): caminar anima Player + Ally0.
-- **Rey Demonio:** jefe final = Rey Demonio (180 HP, atk 15-22, 250 XP).
+- **Rey Demonio:** jefe final = Rey Demonio (300 HP, atk 18-25, 250 XP).
   Vencerlo muestra "¡REY DEMONIO DERROTADO!" (nivel y XP) con
   ↻ Nueva partida (ResetRun: todo a inicial). Huir del Rey Demonio se permite.
-- **Nivel 3:** umbrales 20 XP → 2, 100 XP → 3; HP/atk base 50/12 +10/+2 por nivel.
+- **Nivel 4:** umbrales 20 XP → 2, 100 XP → 3, 250 XP → 4; HP/atk base 50/12 +10/+2 por nivel.
 - **Reto = daño/castigo:** el comando 🧩 Reto abre un puzzle de código al azar
   (offbyone, loop, http, strictnull, sql), 1 uso por batalla. Se responde por
   teclado y con Enter; correcta = 25-35 de daño ("¡conocimiento aplicado!");
@@ -182,10 +209,10 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
 - **Torre del Stack (área 2):** portal en la mazmorra (1008, 624) →
   `scenes/world/Tower.tscn` (spawn 656, 624); salida (656, 560) → mazmorra
   (spawn 1008, 560). Paleta azulada, 11 pilares, pool propio:
-  50% Stack Golem (60 HP, atk 10-14, 40 XP) / 30% Legacy Wraith / 20% Wraithlord,
+  50% Stack Golem (75 HP, atk 12-16, 40 XP) / 30% Legacy Wraith / 20% Wraithlord,
   cada 48px al 28%.
 - **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> Próximo paso sugerido: balance general + audio real opcional.
+> quest del Rey Demonio jugable? NO — ya existe; próximo: segunda área con quest propia + sprites de NPCs extra.
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.

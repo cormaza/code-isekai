@@ -12,6 +12,9 @@ using System.Collections.Generic;
 /// Derrota solo si GameState.AllDead(). TurnLog anota cada turno.
 /// Comandos: Atacar, Habilidad (del job actual, 2 usos), Reto de código
 /// (puzzle al azar, 1 uso por batalla), Job (cambiar, cuesta el turno) y Huir. Victoria → XP (+level up) y vuelta al mapa.
+/// Música: battle_loop.wav en loop (Forward, 0..fin) a -18 dB desde _Ready;
+/// al terminar frena el loop y suena victory.wav (victoria) o nada extra
+/// (derrota, ya tiene el buzz de Sfx). Volumen SFX intacto.
 /// El menú funciona con mouse y con teclado (foco + Enter).
 /// </summary>
 public partial class Battle : Control
@@ -30,6 +33,9 @@ public partial class Battle : Control
 	const string BattleScene = "res://scenes/battle/Battle.tscn";
 	const int AbilityUsesPerBattle = 2;
 	const int PuzzleUsesPerBattle = 1;
+	const string BattleMusic = "res://assets/audio/battle_loop.wav";
+	const string VictoryMusic = "res://assets/audio/victory.wav";
+	AudioStreamPlayer? _music;
 
 	public static readonly Dictionary<string, (string Question, string Answer)> Puzzles = new()
 	{
@@ -144,6 +150,52 @@ public partial class Battle : Control
 		RefreshUi();
 		Say($"¡Un {_def.Name} salvaje aparece! ¡Tu turno, dev!");
 		_attackButton.GrabFocus();
+		StartMusic();
+	}
+
+	/// <summary>Loop de batalla: carga el WAV, loopea 0..fin y suena a -18 dB.</summary>
+	void StartMusic()
+	{
+		if (_music != null)
+		{
+			return;
+		}
+		AudioStreamWav? stream = MusicUtil.LoadLooped(BattleMusic);
+		if (stream == null)
+		{
+			return;
+		}
+		_music = new AudioStreamPlayer
+		{
+			Stream = stream,
+			VolumeDb = -18.0f,
+		};
+		AddChild(_music);
+		_music.Play();
+	}
+
+	/// <summary>Frena el loop de batalla (al terminar la pelea).</summary>
+	void StopMusic()
+	{
+		_music?.Stop();
+	}
+
+	/// <summary>Fanfarria de victoria (one-shot, a -18 dB como la música).</summary>
+	void PlayVictorySting()
+	{
+		AudioStreamWav? stream = MusicUtil.LoadOneShot(VictoryMusic);
+		if (stream == null)
+		{
+			return;
+		}
+		var sting = new AudioStreamPlayer
+		{
+			Stream = stream,
+			VolumeDb = -18.0f,
+		};
+		AddChild(sting);
+		sting.Finished += sting.QueueFree;
+		sting.Play();
 	}
 
 	public override void _Process(double delta)
@@ -581,6 +633,8 @@ public partial class Battle : Control
 	void DoVictory()
 	{
 		CurrentPhase = Phase.Over;
+		StopMusic();
+		PlayVictorySting();
 		string extra = GameState.RegisterVictory(_def.Xp);
 		extra += QuestLog.OnKill(EnemyId);
 		Sfx.Play(this, "victory");
@@ -604,6 +658,7 @@ public partial class Battle : Control
 	void DoDefeat()
 	{
 		CurrentPhase = Phase.Over;
+		StopMusic();
 		Sfx.Play(this, "defeat");
 		Say("GAME OVER — el legado te absorbió… pero todo deploy tiene rollback.");
 		_retryButton.Visible = true;

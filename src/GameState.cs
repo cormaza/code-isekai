@@ -65,32 +65,32 @@ public static class GameState
 	{
 		["slime"] = new EnemyDef
 		{
-			Name = "Slime-Bug", MaxHp = 30, AtkMin = 6, AtkMax = 10, Xp = 20,
+			Name = "Slime-Bug", MaxHp = 36, AtkMin = 7, AtkMax = 11, Xp = 20,
 			Tint = new Color(0.35f, 0.85f, 0.40f), Scale = 1.0f,
 		},
 		["nullrat"] = new EnemyDef
 		{
-			Name = "NullRat", MaxHp = 22, AtkMin = 5, AtkMax = 8, Xp = 12,
+			Name = "NullRat", MaxHp = 26, AtkMin = 6, AtkMax = 9, Xp = 12,
 			Tint = new Color(0.60f, 0.58f, 0.72f), Scale = 0.8f,
 		},
 		["wraith"] = new EnemyDef
 		{
-			Name = "Legacy Wraith", MaxHp = 44, AtkMin = 8, AtkMax = 13, Xp = 30,
+			Name = "Legacy Wraith", MaxHp = 55, AtkMin = 9, AtkMax = 14, Xp = 30,
 			Tint = new Color(0.70f, 0.20f, 0.30f), Scale = 1.1f,
 		},
 		["wraithlord"] = new EnemyDef
 		{
-			Name = "Wraithlord Legacy", MaxHp = 130, AtkMin = 12, AtkMax = 18, Xp = 100,
+			Name = "Wraithlord Legacy", MaxHp = 160, AtkMin = 14, AtkMax = 20, Xp = 100,
 			Tint = new Color(0.45f, 0.08f, 0.12f), Scale = 1.4f,
 		},
 		["demonking"] = new EnemyDef
 		{
-			Name = "Rey Demonio", MaxHp = 180, AtkMin = 15, AtkMax = 22, Xp = 250,
+			Name = "Rey Demonio", MaxHp = 300, AtkMin = 18, AtkMax = 25, Xp = 250,
 			Tint = new Color(0.15f, 0.05f, 0.25f), Scale = 1.6f,
 		},
 	["golem"] = new EnemyDef
 		{
-			Name = "Stack Golem", MaxHp = 60, AtkMin = 10, AtkMax = 14, Xp = 40,
+			Name = "Stack Golem", MaxHp = 75, AtkMin = 12, AtkMax = 16, Xp = 40,
 			Tint = new Color(0.45f, 0.50f, 0.60f), Scale = 1.25f,
 		},
 	};
@@ -196,7 +196,7 @@ public static class GameState
 		return isNew;
 	}
 
-	/// <summary>Suma XP y chequea los umbrales 20→2 y 100→3 una sola vez. Devuelve mensaje de level up o vacío.</summary>
+	/// <summary>Suma XP y chequea los umbrales 20→2, 100→3 y 250→4. Devuelve mensaje de level up o vacío.</summary>
 	public static string AddXp(int amount)
 	{
 		Xp += amount;
@@ -242,7 +242,7 @@ public static class GameState
 		return extra;
 	}
 
-	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3) };
+	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3), (250, 4) };
 
 	/// <summary>Restaura TODA la run a su estado inicial (nueva partida).</summary>
 	public static void ResetRun()

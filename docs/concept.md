@@ -14,18 +14,36 @@ que se tragó a los héroes anteriores.
   (50% Stack Golem / 30% Legacy Wraith / 20% Wraithlord).
 - 120px de gracia tras cada batalla (huida, victoria o portal); 60px al cargar el mapa.
 - Constantes en `World.cs` (RollEveryPx/EncounterChance + variantes Dungeon/Tower) y tabla de
-  enemigos en `GameState.cs` (dict Enemies: slime 30 HP, nullrat 22 HP,
-  wraith 44 HP, golem 60 HP atk 10-14 XP 40, wraithlord 130 HP atk 12-18 XP 100,
-  demonking 180 HP atk 15-22 XP 250).
+  enemigos en `GameState.cs` (dict Enemies: slime 36 HP, nullrat 26 HP,
+  wraith 55 HP, golem 75 HP atk 12-16 XP 40, wraithlord 160 HP atk 14-20 XP 100,
+  demonking 300 HP atk 18-25 XP 250).
 - Área actual `GameState.AreaId`: 0 overworld, 1 mazmorra, 2 torre.
   `InDungeon` queda como reflejo (AreaId > 0); los portales setean ambos.
 - Clase de encuentro `EncounterKind`: "wild" (aleatorio), "slime" (fijo),
   "boss" (mazmorra), "demonking" (final). Victoria: slime→SlimeDefeated,
   boss→BossDefeated, wild→TotalWildWins, demonking→flag en Battle + EndPanel.
-- Niveles: 20 XP → 2, 100 XP → 3; HP/atk base = 50/12 +10/+2 por nivel (+ mod del job).
+- Niveles: 20 XP → 2, 100 XP → 3, 250 XP → 4; HP/atk base = 50/12 +10/+2 por nivel (+ mod del job).
 - Boss: Wraithlord al fondo de la mazmorra (656, 176); su derrota abre el DemonPortal
   del overworld (752, 96), sellado hasta entonces (toast). El Rey Demonio no deja
   volver al mapa: muestra el final con nivel/XP y ↻ Nueva partida (ResetRun).
+
+## Balance (modelo de rondas)
+- Objetivo: salvajes 2-3 rondas, mazmorra 3-4, boss 4-5, final 4-6 (la party pega fuerte; el desafío está en el daño recibido y los usos limitados).
+  | Enemigo | HP | ATK | XP |
+  |---|---|---|---|
+  | NullRat | 26 | 6-9 | 12 |
+  | Slime-Bug | 36 | 7-11 | 20 |
+  | Legacy Wraith | 55 | 9-14 | 30 |
+  | Stack Golem | 75 | 12-16 | 40 |
+  | Wraithlord Legacy | 160 | 14-20 | 100 |
+  | Rey Demonio | 300 | 18-25 | 250 |
+- Nivel 4 en 250 XP; fórmulas genéricas (Level-1)*10 HP y (Level-1)*2 ATK
+  ya escalan (Lv4 = 80 HP/18 ATK base; mensaje "¡La party subió a nivel N!").
+- Tuning: la party de 4 pega ~60-70 por ronda a Lv1, por eso los HP subieron
+  (slime 30→36, wraithlord 130→160, demonking 180→300) y el ATK enemigo
+  amenaza sin one-shotear (máx 25 vs ~340 HP de party a Lv4, con Hotfix
+  de Grace para emergencias). BossSmoke lo guarda: el final dura al menos
+  3 turnos "player" en el TurnLog.
 
 ## Party de 4
 - El player + 3 aliados con jobs fijos: Tux (Frontend Knight), Ada (Backend Mage),
@@ -44,7 +62,7 @@ que se tragó a los héroes anteriores.
 - Paleta oscura (piso 0.13/0.13/0.22, muro 0.08/0.08/0.14), sin caminos, pilares sueltos
   en (5,4), (11,6), (26,4), (31,6), (8,13), (14,17), (26,14), (33,16), (5,18)
   (sin puerta del Rey Demonio) + anillo de muros.
-- Enemigo propio: Legacy Wraith (44 HP, atk 8-13, 30 XP, tint 0.7/0.2/0.3, escala 1.1).
+- Enemigo propio: Legacy Wraith (55 HP, atk 9-14, 30 XP, tint 0.7/0.2/0.3, escala 1.1).
 
 ## Torre del Stack (segunda área)
 - Portal en la mazmorra (1008, 624) → `scenes/world/Tower.tscn` (spawn 656, 624);
@@ -52,7 +70,7 @@ que se tragó a los héroes anteriores.
 - Paleta azulada (piso 0.10/0.12/0.25, muro 0.05/0.06/0.12), sin caminos, 11 pilares
   en (5,4), (11,6), (26,4), (31,6), (8,13), (14,17), (26,14), (33,16), (5,18),
   (17,10), (22,16) (corredores col 19-20, fila 11, spawn y salida libres).
-- Enemigo propio: Stack Golem (60 HP, atk 10-14, 40 XP, tint 0.45/0.5/0.6, escala 1.25).
+- Enemigo propio: Stack Golem (75 HP, atk 12-16, 40 XP, tint 0.45/0.5/0.6, escala 1.25).
 
 ## Guardado + título
 - Scena principal: `scenes/ui/Title.tscn` (CODE ISEKAI + subtítulo):
@@ -96,7 +114,7 @@ que se tragó a los héroes anteriores.
   +60 XP) → demonking ("El Rey Demonio": 1 demonking, +150 XP). `Battle.DoVictory` reporta el kill y anexa
   "¡Quest completa: {título} (+{xp} XP)!" (+ level up si hay) al Say.
   Completar cura full a la party. Tuning: las recompensas (40/80/60/150 XP)
-  aceleran el nivel 2-3 antes del Rey Demonio.
+  aceleran el nivel 2-4 antes del Rey Demonio.
 - Smoke `tests/QuestSmoke.cs` (seed 9): doble E → 3×nullrat → doble E →
   wraithlord → PASS. Smoke `tests/QuestSaveSmoke.cs` (seed 4, sin escenas):
   cadena rats → boss → golems (1/2) → Write → ResetRun → Read (activa +
@@ -144,6 +162,23 @@ que se tragó a los héroes anteriores.
   DoVictory, defeat en DoDefeat, ding/buzz en SubmitPuzzleAnswer
   (correcta/incorrecta), pickup en Crystal, portal en Portal (viaje).
 
+## Música real (WAVs generados)
+- `tools/make_audio.py` (solo stdlib: wave+struct+math) genera 22050 Hz
+  mono 16-bit: `battle_loop.wav` (24 s, La menor, bajo en 8vos + lead
+  cuadrado, patrón de 4 compases a 120 BPM repetido 3x en loop perfecto),
+  `title_loop.wav` (16 s, arpegios Am-F-C-G suaves, 2 ciclos) y
+  `victory.wav` (3 s, fanfarria C-E-G-C + acorde). Composición legible:
+  tabla de notas/frecuencias con comentarios en el script.
+- Integración: `Title` loopea title_loop y `Battle` battle_loop
+  (LoopMode Forward, puntos 0..fin) a -18 dB desde `_Ready`; al terminar
+  (DoVictory/DoDefeat) frena el loop y suena victory.wav (victoria) o
+  nada extra (derrota, ya tiene el buzz de Sfx). Volumen SFX intacto (-12 dB).
+- Carga directa del archivo sin importador (MusicUtil en `src/Title.cs`:
+  FileAccess + parseo del header RIFF): anda con driver Dummy en un
+  checkout fresco. Regenerar: `python3 tools/make_audio.py`.
+- Smoke `tests/AudioSmoke.cs`: título con player audible + batalla con
+  player audible + 1 ataque sin ERROR → PASS.
+
 ## Referencia
 Final Fantasy V (SNES): vista top-down, party de 4, jobs por cristales,
 batalla por turnos con ATB simple, mapa + dungeons + jefes.
@@ -166,7 +201,7 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
   Backend Mage (Fireball, cañón de cristal), DevOps Alchemist (Hotfix/cura).
   Cristales en el mapa desbloquean + equipan + curan; J cicla jobs en el mapa
   y el menú Job cambia en batalla (cuesta el turno). Habilidad: 2 usos.
-- Victoria: +XP y vuelta al mapa; level up a nivel 2 con 20 XP, a nivel 3 con 100 XP.
+- Victoria: +XP y vuelta al mapa; level up a nivel 2 con 20 XP, a nivel 3 con 100 XP, a nivel 4 con 250 XP.
 - Cierre: boss Wraithlord en la mazmorra, portal sellado, Rey Demonio final
   con pantalla de victoria y nueva partida (ResetRun).
 - Smokes: mapa, encuentro fijo, aleatorios, jobs y party/mazmorra.
@@ -180,8 +215,8 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
 5. ~~Party de 4 (aliados con comandos e IA simple) + dungeon.~~ Hecho.
 6. ~~Primer reto real: puzzle de código dentro de la batalla.~~ Hecho
    (comando Reto: 5 puzzles, 1 uso, Enter para responder).
-7. ~~Boss de la mazmorra y camino al Rey Demonio.~~ Hecho (Wraithlord 130 HP,
-   portal sellado, Rey Demonio 180 HP con final + nueva partida, nivel 3).
+7. ~~Boss de la mazmorra y camino al Rey Demonio.~~ Hecho (Wraithlord 160 HP,
+   portal sellado, Rey Demonio 300 HP con final + nueva partida, nivel 4).
 8. ~~Guardado en disco + contenido extra (segunda área, más puzzles).~~ Hecho
    (título con continuar/nueva partida, autoguardado al entrar a mapas,
    Torre del Stack + Stack Golem, 3 puzzles nuevos, 8 smokes).
@@ -189,4 +224,8 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
    persistencia + 7 sprites en código; smokes: 10).
 10. ~~Animaciones de caminar/atacar.~~ Hecho (2 frames 0.18s/paso, lunge con
     Tween, squash-and-stretch, bob idle; smoke AnimSmoke; smokes: 11).
-11. Balance general + audio real opcional.
+11. ~~Balance general + audio real.~~ Hecho (modelo de rondas + nivel 4,
+    WAVs chiptune generados por `tools/make_audio.py`, música en título y
+    batalla; smokes: 12).
+12. quest del Rey Demonio jugable? NO — ya existe; próximo: segunda área con
+    quest propia + sprites de NPCs extra.
