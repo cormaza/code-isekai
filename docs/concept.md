@@ -107,7 +107,9 @@ que se tragó a los héroes anteriores.
   ImageTexture RGBA8 desde filas de strings (' ' = transparente; las filas
   se rellenan a la más larga) + `Dictionary<char, Color>`. Filtro nearest
   global (project.godot), legibles escalados x2-x4.
-- Factories y tamaños: Hero(tint) 14x18 (túnica=tint del job), Slime(tint)
+- Factories y tamaños: Hero(tint, step) 14x18 (túnica=tint del job;
+  step=false piernas separadas = frame A, step=true piernas juntas bajo el
+  cuerpo = frame B; solo cambian las 6 filas de piernas), Slime(tint)
   14x12, Wraith(tint) 12x16 (base rasgada transparente), Golem(tint) 14x14
   (núcleo cyan), DemonKing(tint) 16x18, Gem(tint) 10x14, Mentor() 12x18
   (gris + barba + báculo). `Enemy(id, tint)` mapea id → factory
@@ -117,6 +119,15 @@ que se tragó a los héroes anteriores.
   SlimeBug Sprite x3·Scale, Crystal Gem x3 con pulso, Npc Sprite x2,
   Battle EnemySprite x4·Scale + party x2 y cambio de job en RefreshUi).
   FlashEnemy anima modulate a rojo y vuelve al tint del enemigo.
+- Animaciones: caminata 2 frames en mapa (`Player`/`Ally`: cachean las 2
+  texturas en RefreshJobVisual/`_Ready`, exponen `StepIndex` y alternan cada
+  0.18s en movimiento, frame A quietos; sin generar texturas por frame).
+  Squash-and-stretch del slime (`SlimeBug._Process`: bob en Y + escala X/Y
+  opuesta con sin ±8%, solo visual). Batalla (`Battle`): lunge de ataque con
+  Tween (atacante ±36px en X, 0.09s + 0.09s, sin await extra, en paralelo al
+  flash; bases guardadas en `_Ready`) y bob idle en `_Process` (enemigo ±3px,
+  party ±1.5px con fases distintas, solo Y). Smoke `tests/AnimSmoke.cs`
+  (seed 6): caminar 60 frames anima Player + Ally0, soltar hasta 90 → PASS.
 - Para agregar un sprite: dibujá las filas con caracteres, declará la
   paleta en una factory nueva y asigná `Sprite2D.Texture` en el `_Ready`.
 
@@ -176,4 +187,6 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
    Torre del Stack + Stack Golem, 3 puzzles nuevos, 8 smokes).
 9. Más quests/áreas + sprites propios + balance. Hecho (4 quests con
    persistencia + 7 sprites en código; smokes: 10).
-10. Animaciones de caminar/atacar + balance + audio real opcional.
+10. ~~Animaciones de caminar/atacar.~~ Hecho (2 frames 0.18s/paso, lunge con
+    Tween, squash-and-stretch, bob idle; smoke AnimSmoke; smokes: 11).
+11. Balance general + audio real opcional.

@@ -78,6 +78,12 @@ public partial class Battle : Control
 	PanelContainer _endPanel = null!;
 	Label _endStats = null!;
 
+	// Animación: bases para el bob idle + lunge de ataque (solo X).
+	Vector2 _enemyBase;
+	Vector2 _playerBase;
+	readonly Vector2[] _allyBase = new Vector2[3];
+	float _battleTime;
+
 	public override void _Ready()
 	{
 		if (!GameState.Enemies.TryGetValue(GameState.SelectedEnemy, out _def))
@@ -127,6 +133,12 @@ public partial class Battle : Control
 		_enemySprite.Modulate = _def.Tint;
 		_enemySprite.Scale = new Vector2(_def.Scale * 4.0f, _def.Scale * 4.0f);
 		_playerSprite.Scale = new Vector2(2.0f, 2.0f);
+		_enemyBase = _enemySprite.Position;
+		_playerBase = _playerSprite.Position;
+		for (int i = 0; i < 3; i++)
+		{
+			_allyBase[i] = _allySprites[i].Position;
+		}
 		_enemyHpBar.MaxValue = _def.MaxHp;
 		_playerHpBar.MaxValue = GameState.PlayerMaxHp;
 		RefreshUi();
@@ -134,6 +146,50 @@ public partial class Battle : Control
 		_attackButton.GrabFocus();
 	}
 
+	public override void _Process(double delta)
+	{
+		_battleTime += (float)delta;
+		if (_enemySprite != null)
+		{
+			// Bob idle: solo Y para no pelear con el lunge (que solo toca X).
+			Vector2 p = _enemySprite.Position;
+			p.Y = _enemyBase.Y + Mathf.Sin(_battleTime * 2.5f) * 3.0f;
+			_enemySprite.Position = p;
+		}
+		if (_playerSprite != null)
+		{
+			Vector2 p = _playerSprite.Position;
+			p.Y = _playerBase.Y + Mathf.Sin(_battleTime * 2.5f + 1.5f) * 1.5f;
+			_playerSprite.Position = p;
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			if (_allySprites[i] == null)
+			{
+				continue;
+			}
+			Vector2 p = _allySprites[i].Position;
+			p.Y = _allyBase[i].Y + Mathf.Sin(_battleTime * 2.5f + 2.5f + i) * 1.5f;
+			_allySprites[i].Position = p;
+		}
+	}
+
+	/// <summary>
+	/// Lunge de ataque: desplaza al atacante en X hacia el rival (~36px
+	/// en 0.09s y de vuelta en 0.09s). Se dispara sin await para no
+	/// alargar los timings de turnos; no toca Y para no pelear con el bob.
+	/// </summary>
+	void Lunge(Sprite2D? sprite, float dx)
+	{
+		if (sprite == null)
+		{
+			return;
+		}
+		float homeX = sprite.Position.X;
+		Tween tw = CreateTween();
+		tw.TweenProperty(sprite, "position:x", homeX + dx, 0.09);
+		tw.TweenProperty(sprite, "position:x", homeX, 0.09);
+	}
 	public void OnAttackPressed()
 	{
 		ChooseAttack();
@@ -324,6 +380,7 @@ public partial class Battle : Control
 		_enemyHp = Mathf.Max(0, _enemyHp - dmg);
 		RefreshUi();
 		FlashEnemy();
+		Lunge(_playerSprite, 36.0f);
 		Sfx.Play(this, "hit");
 		Say($"¡{_def.Name} recibe {dmg} de daño! ({label})");
 		await ToSignal(GetTree().CreateTimer(0.5), SceneTreeTimer.SignalName.Timeout);
@@ -424,6 +481,7 @@ public partial class Battle : Control
 		_enemyHp = Mathf.Max(0, _enemyHp - dmg);
 		RefreshUi();
 		FlashEnemy();
+		Lunge(_allySprites[i], 36.0f);
 		Sfx.Play(this, "hit");
 		Say($"¡{name} ({label}) pega {dmg} a {_def.Name}!");
 	}
@@ -495,6 +553,7 @@ public partial class Battle : Control
 			GameState.AllyHp[t] = Mathf.Max(0, GameState.AllyHp[t] - dmg);
 			targetName = GameState.AllyNames[t];
 		}
+			Lunge(_enemySprite, -36.0f);
 			Sfx.Play(this, "hit");
 		RefreshUi();
 		if (GameState.AllDead())

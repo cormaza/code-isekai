@@ -42,8 +42,13 @@ public static class PixelArt
 		return ImageTexture.CreateFromImage(img);
 	}
 
-	/// <summary>Héroe 14x18: pelo oscuro, cara, ojos, túnica=tint, pantalón azul, botas.</summary>
-	public static ImageTexture Hero(Color tunic)
+	/// <summary>Héroe 14x18: pelo oscuro, cara, ojos, túnica=tint, pantalón azul, botas.
+	/// step=false = piernas separadas (frame A, quieto); step=true = piernas
+	/// juntas bajo el cuerpo (frame B, paso). Solo cambian las 6 filas de
+	/// piernas/pantalón/botas (columnas 5-8 en vez de 3-5/8-10).</summary>
+	public static ImageTexture Hero(Color tunic) => Hero(tunic, false);
+
+	public static ImageTexture Hero(Color tunic, bool step)
 	{
 		var palette = new Dictionary<char, Color>
 		{
@@ -55,7 +60,7 @@ public static class PixelArt
 			['p'] = new Color(0.17f, 0.25f, 0.56f),
 			['b'] = new Color(0.29f, 0.18f, 0.09f),
 		};
-		return Sprite(new[]
+		var rows = new List<string>
 		{
 			"....hhhhhh....",
 			"...hhhhhhhh...",
@@ -69,13 +74,26 @@ public static class PixelArt
 			"..tttttttttt..",
 			"..tttkkkkttt..",
 			"...tttttttt...",
-			"...ppp..ppp...",
-			"...ppp..ppp...",
-			"...ppp..ppp...",
-			"...bbb..bbb...",
-			"...bbb..bbb...",
-			"..bbbb..bbbb..",
-		}, palette);
+		};
+		if (!step)
+		{
+			rows.Add("...ppp..ppp...");
+			rows.Add("...ppp..ppp...");
+			rows.Add("...ppp..ppp...");
+			rows.Add("...bbb..bbb...");
+			rows.Add("...bbb..bbb...");
+			rows.Add("..bbbb..bbbb..");
+		}
+		else
+		{
+			rows.Add(".....pppp.....");
+			rows.Add(".....pppp.....");
+			rows.Add(".....pppp.....");
+			rows.Add(".....bbbb.....");
+			rows.Add(".....bbbb.....");
+			rows.Add("....bbbbbb....");
+		}
+		return Sprite(rows.ToArray(), palette);
 	}
 
 	/// <summary>Slime 14x12: blob, panza clara, ojos blancos con pupilas.</summary>

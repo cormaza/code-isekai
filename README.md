@@ -54,7 +54,7 @@ scenes/battle/Battle.tscn    Pelea por turnos (Atacar/Habilidad/Reto/Job/Huir, H
 scenes/pickup/Crystal.tscn  Cristal de job (desbloquea + equipa + cura)
 src/Main.cs            Script raiz / futuro GameManager
 src/World.cs           TileSet + mapa 40x23 + trail de la party + encuentros (overworld/mazmorra)
-src/Player.cs          Movimiento d-pad + J (cambia job) + tinta por job
+src/Player.cs          Movimiento d-pad + J (cambia job) + tinta por job + caminata 2 frames (0.18s/paso)
 src/GameState.cs       Stats + 4 jobs, desbloqueos, encuentro actual, gracia,
                      tabla de enemigos (slime/nullrat/wraith/golem/wraithlord/demonking),
                      AreaId (0 overworld, 1 mazmorra, 2 torre), niveles 1-3,
@@ -62,16 +62,17 @@ src/GameState.cs       Stats + 4 jobs, desbloqueos, encuentro actual, gracia,
 src/SaveGame.cs        Guardado en disco (user://code_isekai_save.json): Write/Read/Has/Wipe (incluye quests: active_id, progress, done)
 src/Title.cs           Lógica del título (continuar según AreaId, nueva partida)
 src/Crystal.cs         Lógica del cristal (toast vía grupo "toast")
-src/SlimeBug.cs        Slime fijo del norte + boss de la mazmorra (EnemyId) al tocar al Player
+src/SlimeBug.cs        Slime fijo del norte + boss de la mazmorra (EnemyId) al tocar al Player + squash-and-stretch
 src/Portal.cs          Portal overworld ↔ mazmorra + DemonPortal (batalla final, sellado con boss)
 src/Battle.cs          Turnos de la party vs slime/nullrat/wraith/wraithlord/Rey Demonio,
                      dano, reto de código, huida, victoria/derrota, level up,
-                     final del juego (EndPanel + nueva partida), SFX y progreso de quests
+                     final del juego (EndPanel + nueva partida), SFX y progreso de quests,
+                     lunge de ataque (tween X 36px) + bob idle (solo Y)
 src/QuestLog.cs        Side-quests del Senior Dev (rats → boss → golems → demonking): oferta, aceptada,
                      progreso por kills, recompensa XP + cura, tracker del HUD
 src/Npc.cs             Senior Dev: primera E abre la oferta, segunda E acepta y cierra
 src/Sfx.cs             Efectos procedurales sin assets (WAV 16-bit a 22050 Hz, Dummy-safe)
-src/PixelArt.cs        Sprites pixel-art propios generados en código (Hero/Slime/Wraith/Golem/DemonKing/Gem/Mentor + Enemy por id), sin assets
+src/PixelArt.cs        Sprites pixel-art propios generados en código (Hero 2 frames/Slime/Wraith/Golem/DemonKing/Gem/Mentor + Enemy por id), sin assets
 src/World.cs           TileSet + mapa 40x23 + encuentros aleatorios en pasto
 tests/MovementSmoke.cs Smoke headless: camina y verifica choque contra muro
 tests/EncounterSmoke.cs Smoke headless: encuentro fijo, pelea y vuelta al mapa
@@ -83,6 +84,7 @@ tests/PuzzleSmoke.cs   Smoke: reto correcto premia (25-35) e incorrecto castiga 
 tests/BossSmoke.cs     Smoke: boss de la mazmorra, Rey Demonio y nueva partida
 tests/QuestSmoke.cs    Smoke: 2 quests encadenadas + SFX
 tests/QuestSaveSmoke.cs Smoke: 4 quests + persistencia en save (golems a medias → ResetRun → Read → cadena completa)
+tests/AnimSmoke.cs     Smoke: caminar anima 2 frames (Player.StepIndex + Ally0.StepIndex)
 icon.svg               Ícono del proyecto
 docs/concept.md        Visión del juego (jobs, batalla, progresión)
 ```
@@ -154,6 +156,14 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   Funciona con driver Dummy (headless sin errores). Suenan en:
   hit (cada golpe en batalla), victory / defeat, ding (reto correcto) /
   buzz (reto incorrecto), pickup (cristal) y portal (viaje).
+- **Animaciones (sin assets):** caminata en 2 frames (`PixelArt.Hero(tint, step)`: step=false piernas
+  separadas, step=true juntas bajo el cuerpo; `Player`/`Ally` cachean ambas texturas al cambiar de job
+  y alternan `StepIndex` cada 0.18s en movimiento, frame A quietos; sin generar texturas por frame).
+  Squash-and-stretch del slime (`SlimeBug._Process`: escala X/Y opuesta con sin, solo visual,
+  la colisión intacta). En batalla (`Battle`): lunge de ataque con Tween (atacante ±36px en X,
+  0.09s ida + 0.09s vuelta, disparado sin await para no alargar turnos, en paralelo al flash)
+  y bob idle (enemigo ±3px, party ±1.5px con fases distintas, solo Y para no pelear con el lunge).
+  Smoke `tests/AnimSmoke.cs` (seed 6): caminar anima Player + Ally0.
 - **Rey Demonio:** jefe final = Rey Demonio (180 HP, atk 15-22, 250 XP).
   Vencerlo muestra "¡REY DEMONIO DERROTADO!" (nivel y XP) con
   ↻ Nueva partida (ResetRun: todo a inicial). Huir del Rey Demonio se permite.
@@ -176,6 +186,6 @@ godot-mono --headless --path . --script res://tests/QuestSmoke.cs
   cada 48px al 28%.
 - **Puzzles nuevos (8 total):** recursion → caso base; bigo → o(1); push → push.
 
-> Próximo paso sugerido: animaciones de caminar/atacar + balance + audio real opcional.
+> Próximo paso sugerido: balance general + audio real opcional.
 
 Leé `docs/concept.md` antes de agregar sistemas nuevos.
