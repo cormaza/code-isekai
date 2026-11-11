@@ -33,6 +33,12 @@ JobIndex = 2
 [node name="Mentor" parent="." instance=ExtResource("7")]
 position = Vector2(560, 368)
 
+[node name="Cleric" parent="." instance=ExtResource("7")]
+position = Vector2(464, 368)
+DisplayName = "Mili la Clériga"
+SpriteKind = "cleric"
+Heals = true
+
 [node name="SlimeBug" parent="." instance=ExtResource("3")]
 position = Vector2(656, 176)
 

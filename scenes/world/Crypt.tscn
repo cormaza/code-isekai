@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/World.cs" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/party/Ally.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/party/Portal.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/npc/Mentor.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/enemy/SlimeBug.tscn" id="6"]
 
 [node name="Crypt" type="Node2D"]
 script = ExtResource("1")
@@ -38,6 +39,11 @@ GoDungeon = true
 [node name="Junior" parent="." instance=ExtResource("5")]
 position = Vector2(560, 560)
 DisplayName = "Junior Dev"
+SpriteKind = "junior"
 
 [node name="NameLabel" parent="Junior"]
 text = "Junior Dev"
+
+[node name="Keeper" parent="." instance=ExtResource("6")]
+position = Vector2(656, 176)
+EnemyId = "keeper"

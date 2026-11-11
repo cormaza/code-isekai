@@ -1,15 +1,16 @@
 using Godot;
 
 /// <summary>
-/// Smoke de persistencia de quests + cadena completa de 4 quests (API pura,
+/// Smoke de persistencia de quests + cadena completa de 6 quests (API pura,
 /// sin escenas: QuestLog/SaveGame no necesitan mapa):
 /// Accept("rats")→true; OnKill("nullrat")×3 → Done rats; Accept("boss")→true;
 /// OnKill("wraithlord") → Done boss; Accept("golems")→true; OnKill("golem")×1;
 /// SaveGame.Write(2, (300,400)); ResetRun(); assert base (ActiveId "" y Done
 /// vacío); Read()→true; assert ActiveId=="golems", Progress==1, Done=[rats,boss],
 /// AreaId y SpawnPoint; OnKill("golem") → Done golems; Accept("demonking")→true;
-/// OnKill("demonking") → Done demonking; NextOffer()=="crypt" (la cadena
-/// sigue con quests 5-6); Wipe() → PASS.
+/// OnKill("demonking") → Done demonking; Accept("crypt")→true; OnKill("segfault")×2
+/// → Done crypt; Accept("keeper")→true; OnKill("keeper") → Done keeper;
+/// assert NextOffer()=="" (fin real de 6 quests); Wipe() → PASS.
 /// Asserts de XP relativos (solo XP>0 tras recompensas). FAIL honesto.
 /// Corre con: godot-mono --headless --path . --script res://tests/QuestSaveSmoke.cs
 /// Sale con código 0 (PASS) o 1 (FAIL).
@@ -156,6 +157,48 @@ public partial class QuestSaveSmoke : SceneTree
 			return;
 		}
 		GD.Print($"SMOKE: demonking OK (Done=[{DoneStr()}], XP={GameState.Xp}). Siguiente: crypt.");
+
+		if (!QuestLog.Accept("crypt"))
+		{
+			Fail("Accept(crypt) devolvió false tras completar demonking.");
+			return;
+		}
+		QuestLog.OnKill("segfault");
+		QuestLog.OnKill("segfault");
+		if (!QuestLog.Done.Contains("crypt"))
+		{
+			Fail($"Done=[{DoneStr()}] tras 2 segfaults (falta crypt).");
+			return;
+		}
+		if (GameState.Xp <= 0)
+		{
+			Fail($"XP={GameState.Xp} tras completar crypt (esperaba >0).");
+			return;
+		}
+		GD.Print($"SMOKE: crypt OK (Done=[{DoneStr()}], XP={GameState.Xp}).");
+
+		if (!QuestLog.Accept("keeper"))
+		{
+			Fail("Accept(keeper) devolvió false tras completar crypt.");
+			return;
+		}
+		QuestLog.OnKill("keeper");
+		if (!QuestLog.Done.Contains("keeper"))
+		{
+			Fail($"Done=[{DoneStr()}] tras keeper (falta keeper).");
+			return;
+		}
+		if (GameState.Xp <= 0)
+		{
+			Fail($"XP={GameState.Xp} tras completar keeper (esperaba >0).");
+			return;
+		}
+		if (QuestLog.NextOffer() != "")
+		{
+			Fail($"NextOffer={QuestLog.NextOffer()} tras keeper (esperaba \"\"; fin real de 6 quests).");
+			return;
+		}
+		GD.Print($"SMOKE: keeper OK (Done=[{DoneStr()}], XP={GameState.Xp}). Fin de la cadena.");
 
 		SaveGame.Wipe();
 		GD.Print("SMOKE PASS: quests persisten y la cadena completa funciona.");

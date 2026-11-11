@@ -1,14 +1,23 @@
 using Godot;
 
 /// <summary>
-/// Senior Dev: NPC de side-quests en el overworld. Primera E abre la
+/// NPC de quests y curación en el overworld. Primera E abre la
 /// oferta (o el texto final si no hay oferta); segunda E acepta y cierra.
+/// Con Heals=true (clériga): cada E cura full a la party con toast,
+/// muestra "Que el deploy te acompañe." y cierra sin tocar QuestLog.
+/// SpriteKind: "mentor" (default), "junior" o "cleric".
 /// El panel vive en el HUD del Main (grupo "dialog_panel").
 /// </summary>
 public partial class Npc : Node2D
 {
 	[Export]
 	public string DisplayName = "Senior Dev";
+
+	[Export]
+	public string SpriteKind = "mentor";
+
+	[Export]
+	public bool Heals = false;
 
 	bool _showingOffer;
 	bool _eHeld;
@@ -17,7 +26,12 @@ public partial class Npc : Node2D
 	{
 		if (GetNodeOrNull<Sprite2D>("Sprite") is Sprite2D sprite)
 		{
-			sprite.Texture = PixelArt.Mentor();
+			sprite.Texture = SpriteKind switch
+			{
+				"junior" => PixelArt.Junior(),
+				"cleric" => PixelArt.Cleric(),
+				_ => PixelArt.Mentor(),
+			};
 			sprite.Scale = new Vector2(2.0f, 2.0f);
 		}
 		var nameLabel = GetNodeOrNull<Label>("NameLabel");
@@ -67,6 +81,21 @@ public partial class Npc : Node2D
 		var hint = panel.GetNodeOrNull<Label>("VBox/HintLabel");
 		if (speaker == null || text == null || hint == null)
 		{
+			return;
+		}
+		if (Heals)
+		{
+			GameState.HealParty();
+			Toast("¡Party curada! La clériga sonríe.");
+			if (!panel.Visible)
+			{
+				speaker.Text = DisplayName;
+				text.Text = "Que el deploy te acompañe.";
+				hint.Text = "E: continuar";
+				panel.Visible = true;
+				return;
+			}
+			panel.Visible = false;
 			return;
 		}
 		if (!panel.Visible)

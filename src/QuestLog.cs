@@ -67,10 +67,10 @@ public static class QuestLog
 		["keeper"] = new QuestDef
 		{
 			Title = "El Guardián del Null",
-			Target = "wraithlord",
+			Target = "keeper",
 			Need = 1,
 			RewardXp = 120,
-			Offer = "El Guardián del Null merodea. ¿Lo bajás?",
+			Offer = "El Guardián del Null aguarda al norte de la cripta. ¿Lo bajás?",
 			Thanks = "¡El Null retrocede!",
 		},
 	};

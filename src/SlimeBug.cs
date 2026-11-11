@@ -1,9 +1,11 @@
 using Godot;
 
 /// <summary>
-/// Slime-Bug salvaje del camino norte (y boss de la mazmorra según EnemyId).
-/// Flota en el lugar; si el Player lo toca, dispara la batalla por turnos
-/// (una sola vez). Tinte y escala salen de GameState.Enemies[EnemyId].
+/// Slime-Bug salvaje del camino norte (y boss de la mazmorra / Guardián
+/// de la cripta según EnemyId). Flota en el lugar; si el Player lo toca,
+/// dispara la batalla por turnos (una sola vez). Tinte y escala salen de
+/// GameState.Enemies[EnemyId]. Kind: "boss" para wraithlord/boss,
+/// "slime" para slime y "wild" para el resto (keeper: XP + TotalWildWins).
 /// </summary>
 public partial class SlimeBug : Area2D
 {
@@ -48,7 +50,11 @@ public partial class SlimeBug : Area2D
 
 	void OnBodyEntered(Node2D body)
 	{
-		if (_triggered || GameState.SlimeDefeated)
+		if (_triggered)
+		{
+			return;
+		}
+		if (EnemyId == "slime" && GameState.SlimeDefeated)
 		{
 			return;
 		}
@@ -60,7 +66,7 @@ public partial class SlimeBug : Area2D
 		{
 			_triggered = true;
 			GameState.SelectedEnemy = EnemyId;
-			GameState.EncounterKind = IsBoss() ? "boss" : "slime";
+			GameState.EncounterKind = IsBoss() ? "boss" : (EnemyId == "slime" ? "slime" : "wild");
 			GameState.SpawnPoint = body.Position;
 			// Diferido: cambiar de escena dentro del callback físico
 			// (body_entered) no está permitido.

@@ -18,17 +18,20 @@ que se tragó a los héroes anteriores.
 - Constantes en `World.cs` (RollEveryPx/EncounterChance + variantes Dungeon/Tower) y tabla de
   enemigos en `GameState.cs` (dict Enemies: slime 36 HP, nullrat 26 HP,
   wraith 55 HP, golem 75 HP atk 12-16 XP 40, segfault 85 HP atk 13-17 XP 55,
-  wraithlord 160 HP atk 14-20 XP 100,
+  keeper 140 HP atk 13-19 XP 120, wraithlord 160 HP atk 14-20 XP 100,
   demonking 300 HP atk 18-25 XP 250).
 - Área actual `GameState.AreaId`: 0 overworld, 1 mazmorra, 2 torre, 3 cripta.
   `InDungeon` queda como reflejo (AreaId > 0); los portales setean ambos.
 - Clase de encuentro `EncounterKind`: "wild" (aleatorio), "slime" (fijo),
   "boss" (mazmorra), "demonking" (final). Victoria: slime→SlimeDefeated,
   boss→BossDefeated, wild→TotalWildWins, demonking→flag en Battle + EndPanel.
-- Niveles: 20 XP → 2, 100 XP → 3, 250 XP → 4; HP/atk base = 50/12 +10/+2 por nivel (+ mod del job).
+- Niveles: 20 XP → 2, 100 XP → 3, 250 XP → 4, 500 XP → 5; HP/atk base = 50/12 +10/+2 por nivel (+ mod del job).
 - Boss: Wraithlord al fondo de la mazmorra (656, 176); su derrota abre el DemonPortal
   del overworld (752, 96), sellado hasta entonces (toast). El Rey Demonio no deja
   volver al mapa: muestra el final con nivel/XP y ↻ Nueva partida (ResetRun).
+- Boss de la cripta: Guardián del Null al norte (656, 176, 140 HP, atk 13-19,
+  120 XP, escala 1.45); kind "wild" (XP + TotalWildWins, sin flags) y cierra
+  la quest 6 (target "keeper").
 
 ## Balance (modelo de rondas)
 - Objetivo: salvajes 2-3 rondas, mazmorra 3-4, boss 4-5, final 4-6 (la party pega fuerte; el desafío está en el daño recibido y los usos limitados).
@@ -39,10 +42,11 @@ que se tragó a los héroes anteriores.
   | Legacy Wraith | 55 | 9-14 | 30 |
   | Stack Golem | 75 | 12-16 | 40 |
   | Serpiente Segfault | 85 | 13-17 | 55 |
+  | Guardián del Null | 140 | 13-19 | 120 |
   | Wraithlord Legacy | 160 | 14-20 | 100 |
   | Rey Demonio | 300 | 18-25 | 250 |
-- Nivel 4 en 250 XP; fórmulas genéricas (Level-1)*10 HP y (Level-1)*2 ATK
-  ya escalan (Lv4 = 80 HP/18 ATK base; mensaje "¡La party subió a nivel N!").
+- Nivel 5 en 500 XP; fórmulas genéricas (Level-1)*10 HP y (Level-1)*2 ATK
+  ya escalan (Lv5 = 90 HP/20 ATK base; mensaje "¡La party subió a nivel N!").
 - Tuning: la party de 4 pega ~60-70 por ronda a Lv1, por eso los HP subieron
   (slime 30→36, wraithlord 130→160, demonking 180→300) y el ATK enemigo
   amenaza sin one-shotear (máx 25 vs ~340 HP de party a Lv4, con Hotfix
@@ -84,8 +88,14 @@ que se tragó a los héroes anteriores.
   (17,12) (corredores col 19-20, fila 11, spawn y salida libres).
 - Enemigo propio: Serpiente Segfault (85 HP, atk 13-17, 55 XP, tint 0.85/0.45/0.15,
   escala 1.3; sprite 16x12 naranja con colmillos blancos y ojos rojos).
-- NPC Junior Dev (560, 560) junto a la salida: instancia de Mentor.tscn con
-  `DisplayName` = "Junior Dev" (export nuevo en `Npc.cs`; el Senior Dev usa el default).
+- NPC Junior Dev (560, 560, túnica teal propia vía `SpriteKind="junior"`) junto a la
+  salida: instancia de Mentor.tscn con `DisplayName` = "Junior Dev".
+- Boss Guardián del Null (656, 176): instancia de SlimeBug.tscn con
+  `EnemyId` = "keeper" (corredor col 19-20 fila 5, libre de pilares).
+- NPC Mili la Clériga (464, 368, camino de tierra seguro): instancia de
+  Mentor.tscn con `SpriteKind` = "cleric" y `Heals` = true; cada E cura
+  full a la party (toast + "Que el deploy te acompañe.", sin QuestLog).
+  Smoke `tests/HealerSmoke.cs` (seed 12, timeout 900).
 
 ## Guardado + título
 - Scena principal: `scenes/ui/Title.tscn` (CODE ISEKAI + subtítulo):
@@ -128,16 +138,20 @@ que se tragó a los héroes anteriores.
   1 wraithlord, +80 XP) → golems ("Torre Estruendosa": 2 golems,
   +60 XP) → demonking ("El Rey Demonio": 1 demonking, +150 XP) → crypt
   ("Siseo en la Cripta": 2 segfault, +70 XP) → keeper ("El Guardián del Null":
-  1 wraithlord, +120 XP). `Battle.DoVictory` reporta el kill y anexa
+  1 keeper al norte de la cripta, +120 XP, offer "El Guardián del Null aguarda
+  al norte de la cripta. ¿Lo bajás?"). `Battle.DoVictory` reporta el kill y anexa
   "¡Quest completa: {título} (+{xp} XP)!" (+ level up si hay) al Say.
   Completar cura full a la party. Tuning: las recompensas (40/80/60/150 XP)
-  aceleran el nivel 2-4 antes del Rey Demonio (y crypt/keeper premian la cripta).
+  aceleran los niveles 2-5 antes y después del Rey Demonio (y crypt/keeper premian la cripta).
 - Smoke `tests/QuestSmoke.cs` (seed 9): doble E → 3×nullrat → doble E →
-  wraithlord → PASS. Smoke `tests/CryptSmoke.cs` (seed 8): cadena API rats → boss →
-  golems → demonking → Accept crypt → 1 segfault → mapa Crypt → salvaje → vuelta a
-  Crypt con Progress >= 1 → PASS. Smoke `tests/QuestSaveSmoke.cs` (seed 4, sin escenas):
-  cadena rats → boss → golems (1/2) → Write → ResetRun → Read (activa +
-  progreso + done + área + spawn) → golems → demonking → PASS.
+  wraithlord → PASS. Smoke `tests/CryptSmoke.cs` (seed 8, timeout 3000): cadena API
+  rats → boss → golems → demonking → Accept crypt → 1 segfault → mapa Crypt →
+  salvaje → vuelta a Crypt con Progress >= 1 → Accept keeper → camina al Guardián
+  (656, 176) peleando salvajes → victoria vs keeper con Done keeper → PASS. Smoke
+  `tests/QuestSaveSmoke.cs` (seed 4, sin escenas): cadena rats → boss →
+  golems (1/2) → Write → ResetRun → Read (activa + progreso + done + área +
+  spawn) → golems → demonking → crypt (2 segfaults) → keeper →
+  NextOffer() == "" (fin real de 6 quests) → PASS.
 
 ## Sprites pixel-art propios (sin assets)
 - `src/PixelArt.cs` (static): `Sprite(rows, palette)` construye un
@@ -148,10 +162,13 @@ que se tragó a los héroes anteriores.
   step=false piernas separadas = frame A, step=true piernas juntas bajo el
   cuerpo = frame B; solo cambian las 6 filas de piernas), Slime(tint)
   14x12, Wraith(tint) 12x16 (base rasgada transparente), Golem(tint) 14x14
-  (núcleo cyan), DemonKing(tint) 16x18, Gem(tint) 10x14, Mentor() 12x18
-  (gris + barba + báculo). `Enemy(id, tint)` mapea id → factory
+  (núcleo cyan), DemonKing(tint) 16x18, Keeper() 16x18 (encapuchado oscuro,
+  ojos verdes, capa rasgada, guadaña marrón+gris), Gem(tint) 10x14, Mentor() 12x18
+  (gris + barba + báculo), Junior() 12x18 (teal + pelo, sin barba),
+  Cleric() 12x18 (blanca + capucha rosa). `Enemy(id, tint)` mapea id → factory
   (wraith/wraithlord → Wraith, golem → Golem, demonking → DemonKing,
-  resto → Slime); el tint vivo sale de `GameState.Enemies` vía Modulate.
+  segfault → Segfault, keeper → Keeper, resto → Slime); el tint vivo sale de
+  `GameState.Enemies` vía Modulate.
 - Dónde están: la textura se asigna en `_Ready` (Player/Ally Body x2,
   SlimeBug Sprite x3·Scale, Crystal Gem x3 con pulso, Npc Sprite x2,
   Battle EnemySprite x4·Scale + party x2 y cambio de job en RefreshUi).
@@ -220,7 +237,7 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
   Backend Mage (Fireball, cañón de cristal), DevOps Alchemist (Hotfix/cura).
   Cristales en el mapa desbloquean + equipan + curan; J cicla jobs en el mapa
   y el menú Job cambia en batalla (cuesta el turno). Habilidad: 2 usos.
-- Victoria: +XP y vuelta al mapa; level up a nivel 2 con 20 XP, a nivel 3 con 100 XP, a nivel 4 con 250 XP.
+- Victoria: +XP y vuelta al mapa; level up a nivel 2 con 20 XP, a nivel 3 con 100 XP, a nivel 4 con 250 XP, a nivel 5 con 500 XP.
 - Cierre: boss Wraithlord en la mazmorra, portal sellado, Rey Demonio final
   con pantalla de victoria y nueva partida (ResetRun).
 - Smokes: mapa, encuentro fijo, aleatorios, jobs y party/mazmorra.
@@ -247,5 +264,13 @@ batalla por turnos con ATB simple, mapa + dungeons + jefes.
     WAVs chiptune generados por `tools/make_audio.py`, música en título y
     batalla; smokes: 12).
 12. ~~cadena de 6 quests + tercera área (cripta).~~ Hecho (Siseo en la Cripta +
-    El Guardián del Null, Serpiente Segfault, Junior Dev, smoke CryptSmoke; smokes: 13).
-13. Jefe de la cripta + sprites de NPCs extra + balance fino.
+    El Guardián del Null, Serpiente Segfault, Junior Dev, overworld + clériga,
+    smoke CryptSmoke; smokes: 13).
+13. ~~jefe de la cripta + sprites de NPCs extra + balance fino.~~ Hecho
+    (Guardián del Null 140 HP kind wild + sprites Junior/Cleric/Keeper,
+    Mili la Clériga que cura, nivel 5, quest 6 retargeteada a keeper,
+    smokes CryptSmoke extendido + HealerSmoke; smokes: 14).
+
+## Próximo paso
+
+post-game: boss rush / NG+ y pulido final.

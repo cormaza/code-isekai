@@ -306,6 +306,112 @@ public static class PixelArt
 		}, palette);
 	}
 
+	/// <summary>Junior 12x18: túnica teal, pelo oscuro, sin barba.</summary>
+	public static ImageTexture Junior()
+	{
+		var palette = new Dictionary<char, Color>
+		{
+			['h'] = new Color(0.25f, 0.18f, 0.12f),
+			['s'] = new Color(0.94f, 0.78f, 0.59f),
+			['e'] = new Color(0.08f, 0.08f, 0.11f),
+			['t'] = new Color(0.15f, 0.55f, 0.55f),
+			['p'] = new Color(0.17f, 0.25f, 0.56f),
+			['b'] = new Color(0.29f, 0.18f, 0.09f),
+		};
+		return Sprite(new[]
+		{
+			"....hhhh....",
+			"...hhhhhh...",
+			"..hhhhhhhh..",
+			"..hhsssshh..",
+			"..hhseses...",
+			"..hhsssshh..",
+			"....ssss....",
+			"...tttttt...",
+			"..tttttttt..",
+			"..tttttttt..",
+			"..tttttttt..",
+			"..tttttttt..",
+			"..tttttttt..",
+			"...tttttt...",
+			"...pppppp...",
+			"...pp..pp...",
+			"...bb..bb...",
+			"..bbb..bbb..",
+		}, palette);
+	}
+
+	/// <summary>Clériga 12x18: túnica blanca con símbolo dorado, capucha rosa.</summary>
+	public static ImageTexture Cleric()
+	{
+		var palette = new Dictionary<char, Color>
+		{
+			['r'] = new Color(0.95f, 0.60f, 0.70f),
+			['s'] = new Color(0.94f, 0.78f, 0.59f),
+			['e'] = new Color(0.08f, 0.08f, 0.11f),
+			['w'] = new Color(0.95f, 0.95f, 0.95f),
+			['o'] = new Color(1.0f, 0.81f, 0.29f),
+			['b'] = new Color(0.29f, 0.18f, 0.09f),
+		};
+		return Sprite(new[]
+		{
+			"....rrrr....",
+			"...rrrrrr...",
+			"..rrrrrrrr..",
+			"..rrssssrr..",
+			"..rrseesrr..",
+			"..rrssssrr..",
+			"....ssss....",
+			"...wwwwww...",
+			"..wwwwwwww..",
+			"..wwwoowww..",
+			"..wwwoowww..",
+			"..wwooooww..",
+			"..wwwoowww..",
+			"..wwwoowww..",
+			"..wwwwwwww..",
+			"...wwwwww...",
+			"...bb..bb...",
+			"...bb..bb...",
+		}, palette);
+	}
+
+	/// <summary>Guardián del Null 16x18: encapuchado oscuro, ojos verdes brillantes,
+	/// capa rasgada y guadaña (palo marrón + hoja gris).</summary>
+	public static ImageTexture Keeper()
+	{
+		var palette = new Dictionary<char, Color>
+		{
+			['h'] = new Color(0.08f, 0.10f, 0.09f),
+			['d'] = new Color(0.05f, 0.14f, 0.09f),
+			['g'] = new Color(0.20f, 1.0f, 0.40f),
+			['k'] = new Color(0.02f, 0.05f, 0.03f),
+			['w'] = new Color(0.42f, 0.27f, 0.14f),
+			['s'] = new Color(0.75f, 0.78f, 0.82f),
+		};
+		return Sprite(new[]
+		{
+			"....hhhhhh......",
+			"...hhhhhhhh.sss.",
+			"..hhhhhhhhhhsw..",
+			"..hhhgggggghhw..",
+			"..hhhgkggkghhw..",
+			"..hhhgggggghhw..",
+			"...hhhhhhhhhw...",
+			"...ddddddddhw...",
+			"..ddddddddddw...",
+			"..ddddddddddw...",
+			"..ddddddddddw...",
+			"..ddddddddddw...",
+			"..ddddddddddw...",
+			"..dddd..ddddw...",
+			"..ddd....dddw...",
+			"..dd......ddw...",
+			"..d....d...dw...",
+			".......d....w...",
+		}, palette);
+	}
+
 	/// <summary>Sprite de enemigo por id (tint de GameState.Enemies).</summary>
 	public static ImageTexture Enemy(string enemyId, Color tint) => enemyId switch
 	{
@@ -313,6 +419,7 @@ public static class PixelArt
 		"golem" => Golem(tint),
 		"demonking" => DemonKing(tint),
 		"segfault" => Segfault(),
+		"keeper" => Keeper(),
 		_ => Slime(tint),
 	};
 }

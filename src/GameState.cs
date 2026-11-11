@@ -98,6 +98,11 @@ public static class GameState
 			Name = "Serpiente Segfault", MaxHp = 85, AtkMin = 13, AtkMax = 17, Xp = 55,
 			Tint = new Color(0.85f, 0.45f, 0.15f), Scale = 1.3f,
 		},
+		["keeper"] = new EnemyDef
+		{
+			Name = "Guardián del Null", MaxHp = 140, AtkMin = 13, AtkMax = 19, Xp = 120,
+			Tint = new Color(0.05f, 0.14f, 0.09f), Scale = 1.45f,
+		},
 	};
 
 	// Party: el player + 3 aliados con jobs fijos.
@@ -201,7 +206,7 @@ public static class GameState
 		return isNew;
 	}
 
-	/// <summary>Suma XP y chequea los umbrales 20→2, 100→3 y 250→4. Devuelve mensaje de level up o vacío.</summary>
+	/// <summary>Suma XP y chequea los umbrales 20→2, 100→3, 250→4 y 500→5. Devuelve mensaje de level up o vacío.</summary>
 	public static string AddXp(int amount)
 	{
 		Xp += amount;
@@ -247,7 +252,7 @@ public static class GameState
 		return extra;
 	}
 
-	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3), (250, 4) };
+	static readonly (int Xp, int Level)[] LevelThresholds = { (20, 2), (100, 3), (250, 4), (500, 5) };
 
 	/// <summary>Restaura TODA la run a su estado inicial (nueva partida).</summary>
 	public static void ResetRun()

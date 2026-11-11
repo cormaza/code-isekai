@@ -1,25 +1,30 @@
 using Godot;
 
 /// <summary>
-/// Smoke de la Cripta del Null + quests 5-6 en dos fases (API + mapa):
+/// Smoke de la Cripta del Null + quests 5-6 en tres fases (API + mapa):
 /// A. Cadena API rápida: Accept("rats")→true; OnKill("nullrat")×3;
 ///    Accept("boss")→true; OnKill("wraithlord"); Accept("golems")→true;
 ///    OnKill("golem")×2; Accept("demonking")→true; OnKill("demonking");
 ///    Accept("crypt")→true; OnKill("segfault")×1 (sin SaveGame).
-/// B. AreaId=3 + InDungeon=true, ChangeSceneToFile Crypt.tscn → Name=="Crypt".
+/// B. AreaId=3 + InDungeon, ChangeSceneToFile Crypt.tscn → Name=="Crypt".
 /// C. Vaga este-oeste por la fila 19 (patrón SaveSmoke) hasta un encuentro
 ///    salvaje, lo gana (ChooseAttack + UseAbility si hay) y verifica que
 ///    vuelve a "Crypt" (FAIL si Main/Dungeon/Tower); assert QuestLog.Progress
 ///    de crypt &gt;= 1 (loguea el EnemyId del primer encuentro).
-/// Si la party pierde → FAIL honesto. Timeout 1800 frames → FAIL.
+/// D. Fase Boss: completa crypt por API si el salvaje no era segfault,
+///    Accept("keeper")→true y camina al Guardián (656, 176) con manejo de
+///    batallas (ChooseAttack + UseAbility si hay); al tocar al Keeper pelea
+///    hasta la victoria; assert QuestLog.Done contiene "keeper" → PASS.
+/// Si la party pierde → FAIL honesto. Timeout 3000 frames → FAIL.
 /// Corre con: godot-mono --headless --path . --script res://tests/CryptSmoke.cs
 /// Sale con código 0 (PASS) o 1 (FAIL).
 /// </summary>
 public partial class CryptSmoke : SceneTree
 {
-	enum Stage { Setup, ToCrypt, Roam, Done }
+	enum Stage { Setup, ToCrypt, Roam, ToKeeper, Done }
 
-	const int TimeoutFrames = 1800;
+	const int TimeoutFrames = 3000;
+	readonly Vector2 KeeperPos = new(656, 176);
 
 	Stage _stage = Stage.Setup;
 	int _frames;
@@ -28,6 +33,8 @@ public partial class CryptSmoke : SceneTree
 	string _roamDir = "";
 	bool _sawCryptBattle;
 	bool _loggedEnemy;
+	bool _loggedKeeper;
+	readonly System.Collections.Generic.List<Vector2> _legs = new();
 
 	public override bool _PhysicsProcess(double delta)
 	{
@@ -123,6 +130,11 @@ public partial class CryptSmoke : SceneTree
 					GD.Print($"SMOKE: primer encuentro salvaje en cripta: EnemyId={wild.EnemyId}.");
 				}
 			}
+			if (_stage == Stage.ToKeeper && wild.EnemyId == "keeper" && !_loggedKeeper)
+			{
+				_loggedKeeper = true;
+				GD.Print("SMOKE: ¡toqué al Guardián del Null! Peleando...");
+			}
 			if (wild.CurrentPhase == Battle.Phase.Over)
 			{
 				bool lost = wild.GetNodeOrNull<Button>("RetryButton")?.Visible == true;
@@ -167,14 +179,58 @@ public partial class CryptSmoke : SceneTree
 					Quit(1);
 					return true;
 				}
-				GD.Print($"SMOKE PASS: cripta + quests 5-6 (ActiveId={QuestLog.ActiveId}, Progress={QuestLog.Progress}, Done=[{DoneStr()}]).");
+				GD.Print($"SMOKE: salvaje OK (ActiveId={QuestLog.ActiveId}, Progress={QuestLog.Progress}, Done=[{DoneStr()}]). Fase Boss: al Guardián...");
+				while (QuestLog.ActiveId == "crypt" && !QuestLog.Done.Contains("crypt"))
+				{
+					QuestLog.OnKill("segfault");
+				}
+				if (!QuestLog.Done.Contains("crypt"))
+				{
+					GD.Print($"SMOKE FAIL: Done=[{DoneStr()}] tras completar crypt por API (falta crypt).");
+					Quit(1);
+					return true;
+				}
+				if (!QuestLog.Accept("keeper"))
+				{
+					GD.Print($"SMOKE FAIL: Accept(keeper) devolvió false (Done=[{DoneStr()}] ActiveId={QuestLog.ActiveId}).");
+					Quit(1);
+					return true;
+				}
+				GD.Print($"SMOKE: quest keeper aceptada (XP={GameState.Xp}). Caminando al Guardián (656, 176)...");
+				// Rodeo del portal de salida (656, 560, radio 24): oeste por la
+				// fila 19, norte por la col 18 (sin pilares) y este hasta el boss.
+				_legs.Clear();
+				_legs.Add(new Vector2(592, 624));
+				_legs.Add(new Vector2(592, 176));
+				_stage = Stage.ToKeeper;
+			}
+			else
+			{
+				RoamStep();
+			}
+		}
+		else if (_stage == Stage.ToKeeper && CurrentScene != null && CurrentScene.Name == "Crypt")
+		{
+			if (QuestLog.Done.Contains("keeper"))
+			{
+				GD.Print($"SMOKE PASS: cripta + boss Guardián (Done=[{DoneStr()}], XP={GameState.Xp}, Lv={GameState.Level}).");
 				_stage = Stage.Done;
 				Quit(0);
 				return true;
 			}
-			RoamStep();
+			while (_legs.Count > 0)
+			{
+				Node2D? p = CurrentScene.GetNodeOrNull<Node2D>("Player");
+				if (p != null && p.Position.DistanceTo(_legs[0]) < 24.0f)
+				{
+					_legs.RemoveAt(0);
+					continue;
+				}
+				break;
+			}
+			WalkToward(_legs.Count > 0 ? _legs[0] : KeeperPos);
 		}
-		else if (_stage == Stage.Roam && CurrentScene != null
+		else if ((_stage == Stage.Roam || _stage == Stage.ToKeeper) && CurrentScene != null
 			&& (CurrentScene.Name == "Main" || CurrentScene.Name == "Dungeon" || CurrentScene.Name == "Tower"))
 		{
 			GD.Print($"SMOKE FAIL: batalla en cripta volvió a {CurrentScene.Name}.");
@@ -205,6 +261,30 @@ public partial class CryptSmoke : SceneTree
 			}
 			Input.ActionPress(next);
 			_roamDir = next;
+		}
+	}
+
+	void WalkToward(Vector2 target)
+	{
+		Node2D? player = CurrentScene?.GetNodeOrNull<Node2D>("Player");
+		if (player == null)
+		{
+			return;
+		}
+		Vector2 d = target - player.Position;
+		if (d.Length() < 12.0f)
+		{
+			ReleaseMoves();
+			return;
+		}
+		ReleaseMoves();
+		if (Mathf.Abs(d.X) >= Mathf.Abs(d.Y))
+		{
+			Input.ActionPress(d.X > 0 ? "move_right" : "move_left");
+		}
+		else
+		{
+			Input.ActionPress(d.Y > 0 ? "move_down" : "move_up");
 		}
 	}
 
